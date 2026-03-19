@@ -1,0 +1,1 @@
+../../../../skills/ship-clean-code/lang-typescript.md

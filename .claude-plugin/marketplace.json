@@ -1,0 +1,25 @@
+{
+  "name": "ship-code",
+  "owner": {
+    "name": "ship-it-ops"
+  },
+  "metadata": {
+    "description": "Ship better code with AI. Production-quality skills for clean code, testing, debugging, and more.",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "ship-clean-code",
+      "source": "./plugins/ship-clean-code",
+      "description": "Apply clean code principles when writing or reviewing production-quality Python, TypeScript/JavaScript, or Java code. Covers naming, functions, classes, error handling, testing, formatting, and 66 cataloged code smells.",
+      "version": "1.0.0",
+      "author": {
+        "name": "ship-it-ops"
+      },
+      "license": "MIT",
+      "keywords": ["clean-code", "code-review", "refactoring", "python", "typescript", "java", "code-quality"],
+      "category": "code-quality"
+    }
+  ]
+}
