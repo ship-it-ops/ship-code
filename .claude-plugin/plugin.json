@@ -1,0 +1,10 @@
+{
+  "name": "ship-it-ops",
+  "description": "Ship better code with AI. Production-quality skills for clean code, testing, debugging, and more.",
+  "version": "1.0.0",
+  "author": {
+    "name": "ship-it-ops"
+  },
+  "license": "MIT",
+  "skills": ["./skills/ship-clean-code"]
+}
