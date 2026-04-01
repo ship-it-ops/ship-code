@@ -20,6 +20,18 @@
       "license": "MIT",
       "keywords": ["clean-code", "code-review", "refactoring", "python", "typescript", "java", "code-quality"],
       "category": "code-quality"
+    },
+    {
+      "name": "ship-tested-code",
+      "source": "./plugins/ship-tested-code",
+      "description": "Apply testing best practices when writing or reviewing tests for Python, TypeScript/JavaScript, or Java code. Covers test design, TDD, test strategy, mocking, integration testing, flaky test management, and 50 cataloged test smells.",
+      "version": "1.0.0",
+      "author": {
+        "name": "ship-it-ops"
+      },
+      "license": "MIT",
+      "keywords": ["testing", "tdd", "test-review", "test-strategy", "python", "typescript", "java", "code-quality"],
+      "category": "code-quality"
     }
   ]
 }

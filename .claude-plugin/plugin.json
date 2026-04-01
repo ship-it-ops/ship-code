@@ -6,5 +6,5 @@
     "name": "ship-it-ops"
   },
   "license": "MIT",
-  "skills": ["./skills/ship-clean-code"]
+  "skills": ["./skills/ship-clean-code", "./skills/ship-tested-code"]
 }

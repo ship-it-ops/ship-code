@@ -1,0 +1,5 @@
+{
+  "name": "ship-tested-code",
+  "description": "Apply testing best practices when writing or reviewing tests for Python, TypeScript/JavaScript, or Java code.",
+  "version": "1.0.0"
+}
