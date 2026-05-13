@@ -1,0 +1,1 @@
+../../../../skills/ship-reviewed-prs/lang-typescript.md

@@ -1,0 +1,1 @@
+../../../../skills/ship-debugged-code/SKILL.md

@@ -4,8 +4,8 @@
     "name": "ship-it-ops"
   },
   "metadata": {
-    "description": "Ship better code with AI. Production-quality skills for clean code, testing, debugging, and more.",
-    "version": "1.0.0",
+    "description": "Ship better code with AI. Production-quality skills for clean code, testing, debugging, PR review, and more.",
+    "version": "1.2.0",
     "pluginRoot": "./plugins"
   },
   "plugins": [
@@ -13,7 +13,7 @@
       "name": "ship-clean-code",
       "source": "./plugins/ship-clean-code",
       "description": "Apply clean code principles when writing or reviewing production-quality Python, TypeScript/JavaScript, or Java code. Covers naming, functions, classes, error handling, testing, formatting, and 66 cataloged code smells.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {
         "name": "ship-it-ops"
       },
@@ -24,13 +24,37 @@
     {
       "name": "ship-tested-code",
       "source": "./plugins/ship-tested-code",
-      "description": "Apply testing best practices when writing or reviewing tests for Python, TypeScript/JavaScript, or Java code. Covers test design, TDD, test strategy, mocking, integration testing, flaky test management, and 50 cataloged test smells.",
-      "version": "1.0.0",
+      "description": "Apply testing best practices when writing or reviewing tests for Python, TypeScript/JavaScript, or Java code. Covers test design, TDD, test strategy, mocking, integration testing, flaky test management, and 49 cataloged test smells.",
+      "version": "1.1.0",
       "author": {
         "name": "ship-it-ops"
       },
       "license": "MIT",
       "keywords": ["testing", "tdd", "test-review", "test-strategy", "python", "typescript", "java", "code-quality"],
+      "category": "code-quality"
+    },
+    {
+      "name": "ship-debugged-code",
+      "source": "./plugins/ship-debugged-code",
+      "description": "Apply systematic debugging practices when investigating, isolating, or fixing bugs in Python, TypeScript/JavaScript, or Java code. Covers reproduction, hypothesis-driven investigation, bisection, root-cause analysis, observability, regression-test design, and postmortems.",
+      "version": "1.0.0",
+      "author": {
+        "name": "ship-it-ops"
+      },
+      "license": "MIT",
+      "keywords": ["debugging", "incident-response", "root-cause-analysis", "postmortem", "python", "typescript", "java", "code-quality"],
+      "category": "code-quality"
+    },
+    {
+      "name": "ship-reviewed-prs",
+      "source": "./plugins/ship-reviewed-prs",
+      "description": "Multi-persona pull-request review (senior engineer, senior security, senior infra/SRE, senior data engineer, test-coverage signal) with comment-lifecycle suppression and decisive APPROVE/REQUEST_CHANGES/COMMENT submission. Runs locally with confirmation gating and in CI fully automated. Composes with the other ship-* skills via delegation.",
+      "version": "1.0.0",
+      "author": {
+        "name": "ship-it-ops"
+      },
+      "license": "MIT",
+      "keywords": ["pr-review", "code-review", "github", "security-review", "approval-workflow", "ci", "multi-persona", "code-quality"],
       "category": "code-quality"
     }
   ]

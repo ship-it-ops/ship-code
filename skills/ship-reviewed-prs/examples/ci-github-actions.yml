@@ -1,0 +1,96 @@
+# Drop-in GitHub Actions workflow that runs ship-reviewed-prs on every PR.
+#
+# Copy to .github/workflows/pr-review.yml in your repo. Adjust the
+# `actions/setup-node` and `claude-code` install steps if your runner already
+# has them.
+#
+# Permissions explained:
+#   contents: read         — to checkout the diff
+#   pull-requests: write   — to post the review
+#   issues: write          — to comment on linked issues if the review references them
+#
+# IMPORTANT: this workflow uses `pull_request`, NOT `pull_request_target`.
+# `pull_request_target` runs with elevated permissions and is dangerous for
+# fork PRs. If you need fork-PR review, use a separate workflow that runs only
+# after a maintainer applies an "ok-to-review" label.
+
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    # Skip drafts unless explicitly marked ready_for_review.
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ship-reviewed-prs may walk commit history for ADDRESSED detection
+
+      - name: Install gh CLI (pre-installed on ubuntu-latest; here for clarity)
+        run: gh --version
+
+      - name: Install Claude Code CLI
+        # Adjust to your team's installation method.
+        run: |
+          curl -fsSL https://claude.ai/cli/install.sh | bash
+          echo "$HOME/.claude/bin" >> $GITHUB_PATH
+
+      - name: Run ship-reviewed-prs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # CI=true is set automatically by GitHub Actions; the skill detects it.
+          # For fine-tuning, set ci-specific overrides:
+          # SHIP_REVIEWED_PRS_CI_MAX_DECISION: COMMENT
+        run: |
+          claude --skill ship-reviewed-prs "${{ github.event.pull_request.html_url }}" --json \
+            > review-result.json
+          # The skill exits:
+          #   0 = APPROVE (or no findings)
+          #   1 = REQUEST_CHANGES (this fails the workflow)
+          #   2 = COMMENT (passes by default; use --strict to fail)
+          #   3 = error
+        # We don't set continue-on-error; we want the workflow to fail on
+        # REQUEST_CHANGES so branch-protection rules can block the merge.
+
+      - name: Upload review result as artifact (for audit)
+        if: always()  # upload even on failure so debugging is easy
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-review-${{ github.event.pull_request.number }}
+          path: review-result.json
+          retention-days: 30
+
+# ---
+# Optional: stricter mode that fails on COMMENT too.
+# Use this when you want the bot to gate every PR, not just critical ones.
+#
+#   run: |
+#     claude --skill ship-reviewed-prs "${{ github.event.pull_request.html_url }}" \
+#       --strict --json > review-result.json
+#
+# ---
+# Optional: COMMENT-only policy (most conservative).
+# Most orgs that have human-approval-required branch protection should use this.
+# The bot still flags concerns; humans still gate merges.
+#
+# Add to overrides.md or .claude/ship-reviewed-prs-overrides.md:
+#
+#   ci_max_decision: COMMENT
+#
+# With this set, the skill always submits as COMMENT regardless of computed
+# decision. The exit code still reflects original severity, so CI gating works.
+#
+# ---
+# Optional: post a comment-with-summary on every PR even when no findings.
+# Set the env var SHIP_REVIEWED_PRS_ALWAYS_COMMENT=true to always emit a
+# bot-disclosure summary, useful when teams want a visible "automated review
+# ran cleanly" signal.

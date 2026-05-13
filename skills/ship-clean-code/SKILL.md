@@ -157,9 +157,9 @@ Rules for when NOT to be strict:
 Detect the programming language from file extensions and context. Load the appropriate
 language-specific reference:
 
-- `.py` files -> Read `${SKILL_DIR}/lang-python.md`
-- `.ts`, `.tsx`, `.js`, `.jsx` files -> Read `${SKILL_DIR}/lang-typescript.md`
-- `.java` files -> Read `${SKILL_DIR}/lang-java.md`
+- `.py` files → Read `lang-python.md`
+- `.ts`, `.tsx`, `.js`, `.jsx` files → Read `lang-typescript.md`
+- `.java` files → Read `lang-java.md`
 
 Apply universal principles first, then layer language-specific idioms on top. When the
 language is ambiguous or not covered, apply only universal principles.
@@ -206,9 +206,14 @@ Rules for the output:
 
 ## Team Overrides
 
-Before applying clean code rules, check if `${SKILL_DIR}/overrides.md` exists. If it does, read it and apply its overrides. Team overrides supersede defaults. Use this for: agreed naming deviations, relaxed line-length limits, project-specific idioms, disabled rules.
+Before applying clean code rules, check for override files in this order (later files win on conflicts):
 
-If a project has a `.claude/ship-clean-code-overrides.md` file, read it as well — project-level overrides take precedence over skill-level overrides.
+1. `overrides.md` next to this `SKILL.md` (team-wide overrides bundled with the skill)
+2. `.claude/ship-clean-code-overrides.md` in the user's project root (project-specific overrides)
+
+Read whichever exist and apply their rules on top of the defaults below. Use overrides for: agreed naming deviations, relaxed line-length limits, project-specific idioms, disabled rules, custom additions.
+
+A template is available at `overrides.example.md` — copy and edit. Do not modify `overrides.example.md` directly; it is reference material.
 
 ## Team Adoption
 
@@ -219,14 +224,25 @@ Phased rollout recommended:
 
 Track: P1/P2 findings per PR (should trend toward zero), team friction reports.
 
+## Related Skills
+
+This skill covers testing and debugging at a high level. For deeper work in those areas, defer to the sibling skills:
+
+- **Test review or test design** → invoke `ship-tested-code`. This skill flags only obvious test gaps and surface-level smells; `ship-tested-code` carries the T1-T7 priority hierarchy, mocking strategy, flakiness diagnosis, and language-specific test idioms.
+- **Bug investigation, root-cause analysis, or regression-test design** → invoke `ship-debugged-code`. This skill notes likely bugs in code review; `ship-debugged-code` runs the actual debugging process.
+- **Pull-request review (orchestrator)** → invoke `ship-reviewed-prs`. That skill runs a multi-persona PR-level review and delegates file-level naming/SRP/readability concerns back to this skill. When working a PR end-to-end, run `ship-reviewed-prs` first; it will tell you which files to run this skill on.
+
+When both apply, run this skill first (clean structure makes other reviews easier), then the specialized skill.
+
 ## Reference Loading
 
-For deeper analysis, load supporting reference files:
+For deeper analysis, load supporting reference files alongside this `SKILL.md`:
 
-- Detailed rules by concern: `${SKILL_DIR}/reference.md`
-- Code smells checklist (66 items): `${SKILL_DIR}/reference-smells.md`
-- Language-specific idioms: `${SKILL_DIR}/lang-{language}.md`
-- Before/after examples: `${SKILL_DIR}/examples/`
+- `reference.md` — Detailed rules organized by concern (naming, functions, classes, errors, testing, logging, boundaries, quality gates)
+- `reference-smells.md` — 66 code smells with detection signatures and fixes (C1-C5, E1-E2, F1-F4, G1-G36, J1-J3, N1-N7, T1-T9)
+- `lang-python.md`, `lang-typescript.md`, `lang-java.md` — Language idioms
+- `examples/python-before-after.md`, `examples/typescript-before-after.md`, `examples/java-before-after.md` — Concrete refactoring examples
+- `examples/review-output-example.md` — End-to-end review output sample
+- `tests/` — Self-test fixtures (sample input code + expected review output)
 
-Load these on-demand when doing thorough reviews or when the user asks for detailed
-guidance on a specific topic.
+Paths are relative to this `SKILL.md`. Load on-demand when doing thorough reviews or when the user asks for detailed guidance on a specific topic.
