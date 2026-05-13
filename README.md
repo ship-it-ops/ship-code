@@ -1,8 +1,11 @@
 # ship-code
 
+[![Validate Skills](https://github.com/ship-it-ops/ship-code/actions/workflows/validate-skills.yml/badge.svg)](https://github.com/ship-it-ops/ship-code/actions/workflows/validate-skills.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Ship better code with AI. An open-source collection of skills, agents, and workflows for AI-assisted software development.
 
-Built on the [Agent Skills open standard](https://agentskills.io) and the Claude Code Skills 2.0 format.
+Built on the [Agent Skills open standard](https://agentskills.io) and the Claude Code Skills 2.0 format. Every skill ships through six CI validation jobs (structure, frontmatter, plugin layout, marketplace consistency, links, markdown style) — see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Featured Skills
 
