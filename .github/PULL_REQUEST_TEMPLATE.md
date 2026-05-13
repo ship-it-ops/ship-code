@@ -1,7 +1,7 @@
 <!--
 Thanks for contributing to ship-code!
 
-CI runs five validation jobs on every PR (see .github/workflows/validate-skills.yml).
+CI runs six validation jobs on every PR (structure, links, markdown, json, yaml, plugin-symlinks — see .github/workflows/validate-skills.yml).
 You can run them locally before pushing:
 
   python3 scripts/validate-skills.py    # structure & frontmatter

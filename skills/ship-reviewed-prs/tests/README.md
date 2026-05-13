@@ -18,5 +18,5 @@ Minor wording differences in the output are fine. Watch for: missing *1 findings
 |---|---|
 | `fixture-1-security-bug-pr` | SC1 (auth-missing) on a new admin endpoint; clean lifecycle; REQUEST_CHANGES decision; bot-disclosure prefix in CI mode |
 | `fixture-2-migration-pr` | DA persona escalation triggered; DA1+IN1 findings on a schema migration; conditional persona activation visible in Confidence |
-| `fixture-3-stale-resolved-pr` | Comment lifecycle suppression: 3 resolved + 2 won't-fix threads, fingerprint dedup drops 4 candidate findings silently |
+| `fixture-3-stale-resolved-pr` | Comment lifecycle suppression: 3 resolved + 2 won't-fix threads. Fingerprint dedup drops 3 candidate findings silently (the three that map to resolved threads); the won't-fix threads have no matching candidates in this fixture. |
 | `fixture-4-clean-approve-pr` | Zero findings, zero open threads, green CI → APPROVE; `--auto-approve` honored on green path |

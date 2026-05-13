@@ -42,10 +42,11 @@ Returns each check with status (`pass`, `fail`, `pending`, `skipping`). Decision
 
 ```bash
 gh api graphql -f query='
-query($owner: String!, $repo: String!, $number: Int!) {
+query($owner: String!, $repo: String!, $number: Int!, $threadCursor: String, $commentCursor: String) {
   repository(owner: $owner, name: $repo) {
     pullRequest(number: $number) {
-      reviewThreads(first: 100) {
+      reviewThreads(first: 100, after: $threadCursor) {
+        pageInfo { hasNextPage endCursor }
         nodes {
           id
           isResolved
@@ -53,7 +54,8 @@ query($owner: String!, $repo: String!, $number: Int!) {
           path
           line
           originalLine
-          comments(first: 50) {
+          comments(first: 50, after: $commentCursor) {
+            pageInfo { hasNextPage endCursor }
             nodes {
               databaseId
               body
@@ -73,6 +75,14 @@ query($owner: String!, $repo: String!, $number: Int!) {
 ```
 
 `authorAssociation` distinguishes OWNER / MEMBER / COLLABORATOR / CONTRIBUTOR / NONE — used to identify maintainers for won't-fix marker detection.
+
+**Pagination is mandatory, not optional.** The lifecycle algorithm depends on seeing *every* thread's *latest* comment to detect won't-fix markers, ADDRESSED commits, and STALE status. On long-lived PRs (the exact case where lifecycle suppression matters most), a single `first: 100` / `first: 50` page misses data and silently produces wrong decisions. Implementation must:
+
+1. Loop the outer `reviewThreads` connection until `pageInfo.hasNextPage` is `false`, passing `endCursor` as the next `threadCursor`.
+2. For each thread, loop the inner `comments` connection until exhausted, using `commentCursor`.
+3. Aggregate results before classifying. Never short-circuit on the first page.
+
+If the skill cannot complete pagination (rate limit, network failure), tag the output with `lifecycle_quality: degraded` and refuse to APPROVE — the suppression algorithm is unreliable without complete data.
 
 REST `/pulls/{n}/comments` does NOT return resolution state. Use GraphQL.
 
@@ -127,7 +137,7 @@ Always-on personas run sequenced in the orchestrator's context:
 <orchestrator reads diff with IN rubric (network calls, observability gaps) without going deep on infra files>
 
 ## TS pass
-<orchestrator computes coverage ratio: prod files modified vs. test files added/modified. Emits TS1 if ratio is bad and the prod file is in the `code` bucket. Emits TS2 if PR body matches "fixes #N" and no test file under `code` bucket was modified.>
+<orchestrator computes coverage ratio: prod files modified vs. test files added/modified. Emits TS1 if ratio is bad and the prod file is in the `code` bucket. Emits TS2 if PR body matches "fixes #N" and no file in the `test` bucket was added or modified.>
 ```
 
 Bracketing is intentional. It keeps each persona's voice distinct without isolating context. The model reads its rubric, scans the diff, emits, and moves on.

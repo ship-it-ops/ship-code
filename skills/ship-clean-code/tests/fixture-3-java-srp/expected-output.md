@@ -26,7 +26,7 @@
 
 - **[P6-READ] Line 26**: `System.out.println` for logging. → Use SLF4J: `logger.info("Order created for customer {}", customerId)`.
 
-- **[P6-READ] Line 16**: HTML built via string concatenation is fragile and not localized. → Use a template engine (Thymeleaf, Mustache, or Freemarker).
+- **[P6-READ] Line 17**: HTML built via string concatenation is fragile and not localized. → Use a template engine (Thymeleaf, Mustache, or Freemarker).
 
 ### What's Good
 

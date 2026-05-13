@@ -107,10 +107,13 @@ jobs:
         run: |
           set -e
           fail=0
+          # Pass the filename via argv so the path isn't interpolated into Python
+          # source — a filename containing a single quote would otherwise turn
+          # the -c expression into a syntax error (or worse).
           while IFS= read -r -d '' f; do
-            if ! python3 -c "import sys, yaml; yaml.safe_load(open('$f'))" 2>/dev/null; then
+            if ! python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1]))' "$f" 2>/dev/null; then
               echo "::error file=$f::Invalid YAML"
-              python3 -c "import sys, yaml; yaml.safe_load(open('$f'))" || true
+              python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1]))' "$f" || true
               fail=1
             else
               echo "ok: $f"

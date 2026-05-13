@@ -38,8 +38,11 @@ interface ReviewResult {
     wont_fix: number;
     addressed: number;
     stale: number;
-    open: number;
-    suppressed_findings: number;
+    // `open` and `suppressed_findings` are nullable because in degraded mode
+    // (e.g. GraphQL unavailable) the skill cannot compute reliable counts.
+    // Consumers should treat null as "data not available", not zero.
+    open: number | null;
+    suppressed_findings: number | null;
   };
 
   // Substantive positive observations
@@ -234,6 +237,8 @@ CI pipelines that read the exit code will still gate on severity 1; downstream t
 ---
 
 ## Sample: degraded mode (GraphQL unavailable)
+
+> **Partial excerpt.** Only the fields that differ from the standard schema are shown below. A real `ReviewResult` document still includes `pr`, `decision_reason`, `ci_state`, `findings`, `delegations`, `whats_good`, and `submission` populated as usual. The fields highlighted here illustrate what changes when the skill cannot compute reliable lifecycle counts.
 
 ```json
 {

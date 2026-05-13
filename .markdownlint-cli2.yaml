@@ -85,6 +85,8 @@ ignores:
   - "node_modules/**"
   - ".git/**"
   - "TEMP/**"
-  # Example .md files inside skills/*/examples/ are deliberately illustrative,
-  # may include malformed-on-purpose snippets, and aren't part of the skill output:
+  # Fixture .md files inside skills/*/tests/ are deliberately illustrative —
+  # they show synthetic PR diffs, expected review output, and other content
+  # that may include malformed-on-purpose Markdown (security examples,
+  # truncated snippets, etc.) and aren't intended to lint as production prose.
   - "skills/*/tests/**/*.md"

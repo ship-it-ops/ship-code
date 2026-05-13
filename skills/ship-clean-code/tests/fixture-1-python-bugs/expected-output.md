@@ -14,7 +14,7 @@ The skill, in review mode, should produce a report substantially matching the st
 
 ### Important (should fix)
 
-- **[P3-ERR] Lines 18-19**: Bare `except:` catches `KeyboardInterrupt`, `SystemExit`, and silently returns `None`. Callers cannot distinguish "no users" from "database error". → Catch specific exceptions (`sqlite3.DatabaseError`), log with context, and either re-raise or raise a domain-specific error.
+- **[P3-ERR] Lines 17-18**: Bare `except:` catches `KeyboardInterrupt`, `SystemExit`, and silently returns `None`. Callers cannot distinguish "no users" from "database error". → Catch specific exceptions (`sqlite3.DatabaseError`), log with context, and either re-raise or raise a domain-specific error.
 
 - **[P3-ERR] Lines 6-7**: Connection and cursor are not closed; on exception, they leak. → Use `with sqlite3.connect("app.db") as conn:` for automatic cleanup.
 

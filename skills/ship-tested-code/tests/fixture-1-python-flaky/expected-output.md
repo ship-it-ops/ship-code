@@ -12,7 +12,7 @@
 
 ### Important (should fix)
 
-- **[T4-DESIGN] Lines 7-18**: `test_subscription` verifies three distinct concepts in one test: activation succeeds, charging succeeds, and the charge timestamp reflects current year. Failure of any one will mask the others. → Split into `test_activate_transitions_status_to_active`, `test_charge_customer_records_positive_amount`, `test_charge_customer_records_timestamp`.
+- **[T4-DESIGN] Lines 7-17**: `test_subscription` verifies three distinct concepts in one test: activation succeeds, charging succeeds, and the charge timestamp reflects current year. Failure of any one will mask the others. → Split into `test_activate_transitions_status_to_active`, `test_charge_customer_records_positive_amount`, `test_charge_customer_records_timestamp`.
 
 - **[T1-COVERAGE] Test file**: Only the happy path is tested. Missing: what if `activate()` is called on an already-active subscription? What if `charge_customer` is called on a deactivated subscription? What if payment fails? → Add tests for each error path. Bugs live in negative paths.
 
@@ -20,7 +20,7 @@
 
 ### Suggestions (improve when convenient)
 
-- **[T7-ASSERT] Line 17**: `s.charged_amount > 0` is a weak assertion. We presumably know the exact expected amount for a "pro" subscription. → Assert the exact value: `assert s.charged_amount == PRO_PLAN_PRICE`.
+- **[T7-ASSERT] Line 16**: `s.charged_amount > 0` is a weak assertion. We presumably know the exact expected amount for a "pro" subscription. → Assert the exact value: `assert s.charged_amount == PRO_PLAN_PRICE`.
 
 - **[N4 — Naming] Line 7**: `test_subscription` does not describe what aspect of subscription is verified. → Rename per the split above (`test_activate_transitions_status_to_active`, etc.).
 

@@ -9,7 +9,7 @@ description: >
   and can submit the review via gh CLI (with confirmation gating in local mode
   and full automation in CI). Manual invocation only.
 disable-model-invocation: true
-allowed-tools: Bash(gh *), Bash, Read, Grep, Glob
+allowed-tools: Bash(gh *), Bash(git *), Read, Grep, Glob
 argument-hint: "[pr-number-or-url] [--auto-approve] [--non-interactive] [--json] [--strict]"
 ---
 
@@ -40,7 +40,7 @@ The detailed reference files (`reference.md`, `reference-personas.md`, `referenc
 |------|--------|
 | `--auto-approve` | Local only: auto-submit on clean APPROVE (green CI, zero open threads, no findings). Never honored for REQUEST_CHANGES or COMMENT. Ignored in CI. |
 | `--non-interactive` | Force CI mode behavior locally (skip confirmation gate). Required if CI auto-detection fails. |
-| `--json` | Emit machine-readable JSON to stdout instead of formatted prose. Implies the full review still posts to GitHub; only the local terminal output format changes. |
+| `--json` | Change the local terminal output format to machine-readable JSON instead of formatted prose. Does NOT bypass the local confirmation gate — submission still requires `yes`/`--auto-approve` per the rules below. In CI mode it changes the stdout format only (submission happens regardless). |
 | `--strict` | CI only: exit code `1` for COMMENT decisions as well as REQUEST_CHANGES. Default is `1` only for REQUEST_CHANGES. |
 
 **Execution mode detection:**

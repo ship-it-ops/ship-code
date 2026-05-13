@@ -76,27 +76,19 @@ def strip_anchor(target: str) -> str:
     return target.split("#")[0].split("?")[0]
 
 
-def looks_like_path(s: str) -> bool:
-    """Heuristic: only treat a backtick-quoted string as a path if it has a dir component or a known extension."""
-    if "/" in s:
-        return True
-    if "." in s:
-        # something.ext where ext is short and alphanumeric
-        ext = s.rsplit(".", 1)[1]
-        if 1 <= len(ext) <= 5 and ext.isalnum():
-            return True
-    return False
-
-
 def check_file(md_path: Path) -> list[tuple[int, str, str]]:
     """Return list of (line_no, link_target, reason) for broken links."""
     text = md_path.read_text(encoding="utf-8")
     stripped = strip_fenced_blocks(text)
     broken: list[tuple[int, str, str]] = []
 
-    # Line numbers for the original text
+    # IMPORTANT: line_no counts newlines in `stripped` (not `text`), because all
+    # regex matches below run against `stripped`. `strip_fenced_blocks` preserves
+    # newlines 1:1 with `text` but empties the fenced-block content, so the
+    # character offsets diverge after the first fenced block — using `text[:idx]`
+    # would mis-report line numbers for any link that appears after a code block.
     def line_no(idx: int) -> int:
-        return text[:idx].count("\n") + 1
+        return stripped[:idx].count("\n") + 1
 
     # Markdown links
     for m in MARKDOWN_LINK.finditer(stripped):
