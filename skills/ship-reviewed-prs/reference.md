@@ -215,7 +215,9 @@ The matrix is intentionally conservative on `APPROVE`. A clean PR with no findin
 
 ## 6. Submission Protocol
 
-GitHub's pending-review API ensures atomicity: inline comments + summary are submitted as a single review object. Use this protocol every time, not the simpler `gh pr review --approve` (which has no inline-comment support).
+GitHub's pending-review API ensures atomicity: inline comments + summary are submitted as a single review object. Use this protocol whenever the submission has one or more inline comments.
+
+**Exception — inline-less APPROVE.** When the decision is APPROVE and the finding list contains zero inline comments (clean PR, only a summary body), the simpler `gh pr review <n> --approve --body "<summary>"` form is acceptable and preferred for its brevity. This is the only case where the simpler form is allowed; REQUEST_CHANGES, COMMENT, and any APPROVE with inline findings must use the pending-review protocol below.
 
 ### Step 1: Create pending review
 

@@ -54,11 +54,9 @@ diff --git a/sdk/index.ts b/sdk/index.ts
 ### Decision: REQUEST_CHANGES
 
 ### Confidence
-Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 generated, 0 vendor files. Conditional DA persona activated (schema migration). Conditional IN-deep persona did not activate (no IaC). CI is green. 3 existing review threads classified — 1 won't-fix, 1 outdated, 1 still open. Suppressed 1 candidate finding that matched the won't-fix thread. The critical findings below are independent of the existing review activity and must be addressed; the SE2 contract-drift is subtle but real and worth a quick discussion.
+Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 generated, 0 vendor files. Conditional DA persona activated (schema migration). Conditional IN-deep persona did not activate (no IaC). CI is green. 3 existing review threads classified — 1 won't-fix, 1 outdated, 1 still open. Suppressed 2 candidate findings: one matched Thread A (won't-fix, NOT NULL default) and is dropped silently; one matched Thread C (open, admin auth) and is surfaced under "Open threads still need author response" rather than re-raised as a fresh finding. The decision is still REQUEST_CHANGES because Thread C carries an SC1-priority concern that remains unresolved.
 
 ### Critical (must fix before merge)
-
-- **[SC1-AUTH-MISSING] api/admin.ts:42**: New `POST /admin/users/:id/tier` route has no auth middleware. Any unauthenticated request can change any user's tier. → Add `requireAdmin` middleware (project pattern: see `api/admin/users.ts:8` for the existing `router.post("/admin/users/:id", requireAdmin, ...)` form). This is also the concern raised in Thread C; the author has acknowledged but the code is not yet updated. Verify with `curl -X POST localhost:3000/admin/users/123/tier -d '{"tier":"premium"}' → 401`.
 
 - **[DA3-BACKFILL-MISSING] migrations/0042_add_user_tier.sql:1**: Adding NOT NULL `tier` to an existing populated `users` table. Migration will fail when run against production data. → Three-step migration:
   1. Add column nullable with default: `ALTER TABLE users ADD COLUMN tier TEXT DEFAULT 'free'`.
@@ -66,9 +64,9 @@ Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 ge
   3. Add NOT NULL constraint in a follow-up migration after backfill completes.
   The PR description mentions `default 'free'` but the SQL does not include `DEFAULT 'free'`.
 
-### Important (should fix)
-
 - **[IN1-PROD-OUTAGE-RISK] services/billing.ts:5**: `fetch("https://billing.internal/users/...")` has no timeout. A slow billing-internal will hang this function indefinitely, blocking the calling request and exhausting connection pool capacity. → Add `signal: AbortSignal.timeout(5000)` and a retry policy: see `lib/http.ts` for the team's `httpWithRetry` helper.
+
+### Important (should fix)
 
 - **[SC7-LOG-LEAKAGE] services/billing.ts:6**: `console.log("Premium check for user:", user)` writes the full user object (including email) to logs. → Log the user ID only: `logger.info("billing.premium_check", { user_id: userId })`. Use the structured logger, not `console.log`.
 
@@ -83,11 +81,14 @@ Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 ge
 - Run `/ship-tested-code` on this PR — production code added in `services/billing.ts` and `api/admin.ts` (52 net added lines) with no test files modified. TS1 triggered.
 - Run `/ship-debugged-code` on PR #4811 — description mentions `fixes #4801` but no regression test was added. TS2 triggered. (Once the regression test exists, return here for re-review.)
 
+### Open threads (still need author response)
+- `api/admin.ts:42` (Thread C, opened 1 day ago — "Should this require admin auth?") — matches SC1-AUTH-MISSING from this scan. The original framing is correct; the author acknowledged ("Yes, will add.") but the code has not been updated. This thread is what blocks the decision matrix from approving — same severity as SC1 (priority 1) so the unresolved concern drives REQUEST_CHANGES.
+
 ### Comment lifecycle
 - 1 won't-fix (Thread A: NOT NULL default, deferred to #4820)
 - 1 outdated (Thread B: prior version of services/billing.ts)
-- 1 open (Thread C: admin auth — same concern as SC1 above; the author acknowledged but has not yet pushed the fix)
-- Suppressed: 1 finding already discussed in earlier review (would have re-raised the NOT NULL default concern from Thread A; not re-raised because author marked won't-fix and is tracking in #4820)
+- 1 open (Thread C: admin auth — surfaced above, not re-raised as a fresh finding)
+- Suppressed: 2 findings already discussed in earlier review (NOT NULL default → won't-fix Thread A; admin auth → routed to Open threads above instead of re-emitted).
 
 ### Stale comments needing reply
 - (none)
@@ -100,7 +101,7 @@ Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 ge
 
 ### Submission preview (local mode only)
   gh api -X POST repos/ship-it-ops/ship-code/pulls/4811/reviews (create pending review)
-  gh api -X POST .../reviews/${REVIEW_ID}/comments × 5  (one per inline finding above)
+  gh api -X POST .../reviews/${REVIEW_ID}/comments × 4  (one per inline finding above — DA3, IN1, SC7, SE2; IN2 is a suggestion, included in the summary but not inline)
   gh api -X POST .../reviews/${REVIEW_ID}/events -f event=REQUEST_CHANGES -f body="<this entire output as the summary, with the Submission preview block stripped>"
 
 Proceed? Type "yes" to submit, "edit" to revise the body, "no" to abort.
@@ -111,9 +112,10 @@ Proceed? Type "yes" to submit, "edit" to revise the body, "no" to abort.
 ## What this example demonstrates
 
 1. **Decision is decisive**: REQUEST_CHANGES, with a one-line reason and substantive Confidence section.
-2. **Multi-persona findings**: SC (auth, log leakage), DA (migration), IN (timeout, observability), SE (contract drift), TS (delegation only).
-3. **Lifecycle suppression**: a NOT NULL default concern is *not* re-raised because Thread A marked it won't-fix.
-4. **Lifecycle visibility**: every lifecycle state present is named, with counts. Suppression count is explicit.
-5. **Delegations are separate from findings**: TS1 and TS2 are surfaced but don't count toward the decision.
-6. **"What's Good" is substantive**: not generic. Names what the author did well that makes the reviewer's job easier.
-7. **Submission preview shows the exact `gh` commands** — no opaque "I will submit a review"; the reviewer sees what's about to happen.
+2. **Multi-persona findings**: SC (log leakage), DA (migration), IN (timeout, observability), SE (contract drift), TS (delegation only).
+3. **Won't-fix suppression**: a NOT NULL default concern is *not* re-raised because Thread A marked it won't-fix and tracked in #4820. Dropped silently into the suppressed-finding counter.
+4. **Open-thread suppression**: the admin-auth concern (SC1) is *also* not re-raised as a fresh inline finding — Thread C already covers it. Instead, the thread is surfaced under "Open threads (still need author response)" with its original framing, and its priority-1 weight still drives the decision matrix to REQUEST_CHANGES. This is the difference between "duplicate the team's existing work" and "leverage it."
+5. **Lifecycle visibility**: every lifecycle state present is named, with counts. Suppression count is explicit (2 here).
+6. **Delegations are separate from findings**: TS1 and TS2 are surfaced but don't count toward the decision.
+7. **"What's Good" is substantive**: not generic. Names what the author did well that makes the reviewer's job easier.
+8. **Submission preview shows the exact `gh` commands** — no opaque "I will submit a review"; the reviewer sees what's about to happen.

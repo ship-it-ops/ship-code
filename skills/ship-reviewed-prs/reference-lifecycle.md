@@ -29,7 +29,7 @@ Every review thread on the PR falls into exactly one state. Compute deterministi
   - `out of scope`, `out-of-scope`, `out of scope for this pr`, `not in this pr`
   - `tracked in #`, `tracking in #`, `see #`, `filed as #` (the trailing `#` is enough — `tracked in #5001` substring-matches `tracked in #`)
   - `agreed to skip`, `discussed offline`, `discussed on slack`, `discussed sync`
-  - `next pr`, `follow-up pr`, `follow-up`
+  - `follow-up pr`, `follow-up ticket`, `follow-up issue`, `next pr`, `separate pr` (NOTE: bare `follow-up` is intentionally excluded — a comment like "pushed a follow-up commit" should NOT classify as won't-fix because the author is claiming the concern was addressed, not deferred. The marker must reference a *separate work item*.)
   - `as discussed`, `per discussion`
   - **Reaction marker**: a `:white_check_mark:` or `:thumbsup:` (👍) reaction from the *original commenter* on the author's response
 
@@ -272,9 +272,14 @@ wont_fix_markers:
   - "discussed offline"
   - "next pr"
   - "follow-up pr"
-  - "follow-up"
+  - "follow-up ticket"
+  - "follow-up issue"
+  - "separate pr"
   - "as discussed"
   - "per discussion"
+  # Note: bare "follow-up" intentionally NOT in the default set — too broad,
+  # would catch innocent author replies like "pushed a follow-up commit".
+  # Teams that want it can add it explicitly.
 
 wont_fix_reactions: [white_check_mark, thumbsup]
 

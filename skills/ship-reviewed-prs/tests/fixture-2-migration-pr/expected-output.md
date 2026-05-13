@@ -17,9 +17,11 @@ Reviewed 2 files (1 schema migration, 1 ORM model). DA persona activated (schema
 
 - **[DA2-DATA-LOSS-RISK] migrations/0042_drop_legacy_id.sql:1**: `DROP COLUMN` is irreversible without a backup. The values in `legacy_external_id` are gone the moment this runs. Even after consumers migrate off, archive the values before dropping. → Add a step before the migration: `INSERT INTO archived_user_legacy_ids SELECT id, legacy_external_id FROM users WHERE legacy_external_id IS NOT NULL`. Or document explicitly that no archival is needed and why (legal/compliance signoff).
 
+- **[IN1-PROD-OUTAGE-RISK] migrations/0042_drop_legacy_id.sql:1**: `DROP COLUMN` on a populated table takes an ACCESS EXCLUSIVE lock in PostgreSQL. On a large `users` table this can block all reads/writes for a meaningful window during the deploy. → Schedule for a low-traffic window OR use `ALTER TABLE ... DROP COLUMN IF EXISTS ...` after first marking nullable and waiting one release (per the DA1 recommendation, which subsumes this).
+
 ### Important (should fix)
 
-- **[IN1-PROD-OUTAGE-RISK] migrations/0042_drop_legacy_id.sql:1**: `DROP COLUMN` on a populated table takes an ACCESS EXCLUSIVE lock in PostgreSQL. On a large `users` table this can block all reads/writes for a meaningful window during the deploy. → Schedule for a low-traffic window OR use `ALTER TABLE ... DROP COLUMN IF EXISTS ...` after first marking nullable and waiting one release (per the DA1 recommendation, which subsumes this).
+- (none)
 
 ### Suggestions (improve when convenient)
 

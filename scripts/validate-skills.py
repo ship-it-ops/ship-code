@@ -25,6 +25,9 @@ Checks performed:
     - plugin.json.name matches directory name
     - plugin.json.version is a valid semver string (X.Y.Z)
     - Per-file symlinks resolve to the source files
+    - **Every file/dir in skills/<name>/ has a matching entry under plugins/<name>/skills/<name>/**
+      (catches the regression where new skill files ship without the plugin wrapper getting
+      a symlink, so plugin-installed users miss content the skill references)
 
   MARKETPLACE CONSISTENCY
     - .claude-plugin/marketplace.json is valid JSON
@@ -374,6 +377,30 @@ def validate_plugin_layout(errors: Errors, skill_name: str) -> dict | None:
             "Plugin missing description",
             f"plugins/{skill_name}/.claude-plugin/plugin.json: description is required",
         )
+
+    # Every file/dir in the source skill directory must have a matching entry
+    # under the plugin wrapper. Otherwise plugin-installed users get a partial
+    # copy that's missing things SKILL.md references (overrides.example.md,
+    # tests/, etc.). This regression slipped past CI once already; never again.
+    src_skill_dir = SKILLS_DIR / skill_name
+    plugin_skill_dir = plugin_dir / "skills" / skill_name
+    if src_skill_dir.is_dir() and plugin_skill_dir.is_dir():
+        src_entries = {p.name for p in src_skill_dir.iterdir()}
+        plugin_entries = {p.name for p in plugin_skill_dir.iterdir()}
+        for missing in sorted(src_entries - plugin_entries):
+            errors.add(
+                "Plugin missing file",
+                f"plugins/{skill_name}/skills/{skill_name}/{missing} does not exist "
+                f"but skills/{skill_name}/{missing} does. Add a symlink: "
+                f"`ln -s ../../../../skills/{skill_name}/{missing} "
+                f"plugins/{skill_name}/skills/{skill_name}/{missing}`",
+            )
+        for extra in sorted(plugin_entries - src_entries):
+            errors.add(
+                "Plugin has orphan file",
+                f"plugins/{skill_name}/skills/{skill_name}/{extra} exists but "
+                f"skills/{skill_name}/{extra} does not — stale symlink?",
+            )
 
     return manifest
 

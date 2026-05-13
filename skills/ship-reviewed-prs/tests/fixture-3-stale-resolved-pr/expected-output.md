@@ -29,7 +29,7 @@ Reviewed 1 file (services/payments.ts, 45 net added lines). No conditional perso
 - Suppressed: 3 findings already discussed in earlier review (would have re-raised resolved concerns about parametrized policy, UUID generation, retry logging).
 
 ### Open threads (still need author response)
-- services/payments.ts:38 (Grace, 1 day ago — "Add a test for the retry exhaustion path") — matches the TS1 delegation above. Author should address Grace's specific request or close with a follow-up ticket.
+- services/payments.ts:38 (Grace, 2026-05-11 14:00 UTC — "Add a test for the retry exhaustion path") — matches the TS1 delegation above. Author should address Grace's specific request or close with a follow-up ticket.
 
 ### What's Good
 

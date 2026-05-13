@@ -29,9 +29,9 @@ The detailed reference files (`reference.md`, `reference-smells.md`) assume fami
 
 - **Investigation mode** (default when a bug is described or a failure is presented): Drive the debugging process. Start with reproduction, form hypotheses, narrow the search, identify the root cause, propose a fix at the right layer, and produce a regression test. Surface assumptions explicitly and check them before acting.
 
-- **Review mode** (when explicitly reviewing a fix, a debugging session, a postmortem, or invoking `/ship-debugged-code`): Read the proposed fix and the surrounding context, analyze against the rules below, and produce a structured report using the Review Output Format defined in this skill.
+- **Review mode** (when explicitly reviewing a fix, a debugging session, or a postmortem): Read the proposed fix and the surrounding context, analyze against the rules below, and produce a structured report using the Review Output Format defined in this skill.
 
-Trigger investigation mode when the user says: "I have a bug", "this is failing", "why does X happen", "help me debug", "reproduce this issue". Trigger review mode when the user says: "review this fix", "audit this debugging session", "review my postmortem", or invokes the skill explicitly. When in doubt, ask whether the user wants you to debug or review.
+Trigger investigation mode when the user says: "I have a bug", "this is failing", "why does X happen", "help me debug", "reproduce this issue". Trigger review mode when the user says: "review this fix", "audit this debugging session", "review my postmortem", "review this PR". A bare `/ship-debugged-code` invocation does NOT imply review mode — when the user runs the slash command without explicit context, ask whether they want help debugging an active issue or reviewing a fix/postmortem.
 
 ## Core Principles - Always Apply
 

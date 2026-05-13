@@ -9,7 +9,7 @@ Built on the [Agent Skills open standard](https://agentskills.io) and the Claude
 
 ## Featured Skills
 
-Four skills covering the lifecycle of production code — write it clean, prove it works, fix it when it breaks, and review the pull request before it merges. The first three follow the same architecture (writing/review modes with language-specific idioms for Python, TypeScript/JavaScript, and Java). The fourth orchestrates a multi-persona PR review and composes with the others via delegation.
+Four skills covering the lifecycle of production code — write it clean, prove it works, fix it when it breaks, and review the pull request before it merges. The first three share the same architecture: two modes per skill (writing/review for `ship-clean-code` and `ship-tested-code`; investigation/review for `ship-debugged-code`), language-specific idioms for Python, TypeScript/JavaScript, and Java, and priority-tagged review output. The fourth (`ship-reviewed-prs`) orchestrates a multi-persona PR review and composes with the others via delegation.
 
 ### ship-clean-code
 

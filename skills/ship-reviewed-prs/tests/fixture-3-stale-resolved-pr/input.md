@@ -2,6 +2,8 @@
 
 You are reviewing a long-lived PR with substantial review history. Treat the input below as the result of the `gh` fetch phase.
 
+**Review timestamp (fixed for this fixture):** `2026-05-12T15:00:00Z`. Use this as "now" when computing stale thresholds and relative ages so the expected output stays deterministic.
+
 ## PR metadata
 
 ```json

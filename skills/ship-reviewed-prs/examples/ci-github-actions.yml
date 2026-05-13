@@ -4,10 +4,9 @@
 # `actions/setup-node` and `claude-code` install steps if your runner already
 # has them.
 #
-# Permissions explained:
+# Permissions explained (least-privilege):
 #   contents: read         — to checkout the diff
-#   pull-requests: write   — to post the review
-#   issues: write          — to comment on linked issues if the review references them
+#   pull-requests: write   — to post the review (the only write scope the skill needs)
 #
 # IMPORTANT: this workflow uses `pull_request`, NOT `pull_request_target`.
 # `pull_request_target` runs with elevated permissions and is dangerous for
@@ -28,7 +27,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
