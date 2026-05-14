@@ -1,24 +1,59 @@
 # ship-code
 
+[![Validate Skills](https://github.com/ship-it-ops/ship-code/actions/workflows/validate-skills.yml/badge.svg)](https://github.com/ship-it-ops/ship-code/actions/workflows/validate-skills.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Ship better code with AI. An open-source collection of skills, agents, and workflows for AI-assisted software development.
 
-Built on the [Agent Skills open standard](https://agentskills.io) and the Claude Code Skills 2.0 format.
+Built on the [Agent Skills open standard](https://agentskills.io) and the Claude Code Skills 2.0 format. Every skill ships through six CI validation jobs (structure, frontmatter, plugin layout, marketplace consistency, links, markdown style) — see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-## Featured Skill: ship-clean-code
+## Featured Skills
+
+Four skills covering the lifecycle of production code — write it clean, prove it works, fix it when it breaks, and review the pull request before it merges. The first three share the same architecture: two modes per skill (writing/review for `ship-clean-code` and `ship-tested-code`; investigation/review for `ship-debugged-code`), language-specific idioms for Python, TypeScript/JavaScript, and Java, and priority-tagged review output. The fourth (`ship-reviewed-prs`) orchestrates a multi-persona PR review and composes with the others via delegation.
+
+### ship-clean-code
 
 Write cleaner, more maintainable code across Python, TypeScript/JavaScript, and Java. Combines established clean code principles with modern best practices.
-
-**What it does:**
-- **Writing mode** — Silently applies clean code principles when generating code
-- **Review mode** — Produces structured code reviews with priority-ranked findings (P1-Bugs through P7-Style)
-- **Language-aware** — Auto-detects Python, TypeScript, or Java and loads language-specific idioms
 
 **What it covers:**
 - 12 core principles (naming, functions, classes, SRP, error handling, DRY, and more)
 - 66 cataloged code smells with detection and fix guidance
-- Logging & observability, testing best practices, quality gates
-- Before/after examples for each language
+- Logging & observability, quality gates, language-specific idioms
+- Priority-ranked review findings (P1-Bugs through P7-Style)
 - Pragmatism guidelines (won't rewrite code you didn't ask it to touch)
+
+### ship-tested-code
+
+Write effective, maintainable tests and review existing ones for design, coverage, and flakiness.
+
+**What it covers:**
+- 12 core principles (test behavior not implementation, AAA, deterministic tests, mock at boundaries, etc.)
+- 49 cataloged test smells across design, data, assertions, mocking, flakiness, naming, structure, coverage
+- Test strategy by architecture (monolith, microservices, frontend), property-based and mutation testing
+- Priority-ranked review findings (T1-Missing Coverage through T7-Assertions)
+- Language-specific patterns (pytest fixtures, MSW, TestContainers, Pact, jqwik)
+
+### ship-debugged-code
+
+Investigate and resolve bugs systematically — hypothesis-driven, with regression tests as the deliverable.
+
+**What it covers:**
+- 12 core principles (reproduce first, bisect, change one thing at a time, never trust intermittents, etc.)
+- Cataloged debugging anti-patterns (shotgun debugging, premature fixes, log spamming)
+- Tools and techniques per language (pdb/breakpoint, Chrome DevTools, jdb/IntelliJ, profilers)
+- Priority-ranked findings (D1-Cannot Reproduce through D7-Documentation)
+- Regression-test-driven fixes — every confirmed bug ships with a test that fails before the fix
+
+### ship-reviewed-prs
+
+A senior-team review of every pull request — security, infra, data, and engineering perspectives in one pass, with comment-lifecycle awareness and a decisive verdict.
+
+**What it covers:**
+- Five personas (SE Senior Engineer, SC Senior Security Engineer, IN Senior Infra/SRE, DA Senior Data Engineer conditional, TS Test Reviewer delegation-only) with distinct rubrics that compose into a single priority-ordered review
+- Six-state comment lifecycle (RESOLVED, OUTDATED, WONT_FIX, ADDRESSED, STALE, OPEN) — re-raised findings get suppressed silently, won't-fix markers are honored, "possibly addressed" is surfaced for human confirmation
+- Deterministic decision matrix: APPROVE / REQUEST_CHANGES / COMMENT with no LLM negotiation
+- Local mode with interactive confirmation gate; CI mode with full automation, exit codes for pipeline gating, `--json` output, and `ci_max_decision` override for teams whose policy forbids bot approvals
+- Composes with the other three skills via a delegation table — naming/readability goes to `ship-clean-code`, test depth to `ship-tested-code`, root-cause to `ship-debugged-code`
 
 ## Installation
 
@@ -32,6 +67,9 @@ This repo is a Claude Code plugin marketplace. Add it once and get access to all
 
 # Then install any skill from the marketplace:
 /plugin install ship-clean-code@ship-code
+/plugin install ship-tested-code@ship-code
+/plugin install ship-debugged-code@ship-code
+/plugin install ship-reviewed-prs@ship-code
 
 # To see all available skills:
 /plugin marketplace list ship-code
@@ -61,8 +99,11 @@ You can also configure your project to recommend this marketplace to your team. 
 Using Vercel's [skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
-# Install to your current project
+# Install a single skill to your current project
 npx skills add ship-it-ops/ship-code --skill ship-clean-code
+npx skills add ship-it-ops/ship-code --skill ship-tested-code
+npx skills add ship-it-ops/ship-code --skill ship-debugged-code
+npx skills add ship-it-ops/ship-code --skill ship-reviewed-prs
 
 # Install globally (available in all projects)
 npx skills add ship-it-ops/ship-code --skill ship-clean-code -g
@@ -196,18 +237,35 @@ EOF
 
 ```text
 .claude-plugin/                      — Plugin marketplace manifest
-  └── marketplace.json               — Marketplace catalog (add via /plugin marketplace add)
+  ├── marketplace.json               — Marketplace catalog (add via /plugin marketplace add)
+  └── plugin.json                    — Root plugin descriptor for the skills CLI
 plugins/                             — Plugin-packaged skills (for marketplace distribution)
-  └── ship-clean-code/               — Plugin wrapper (symlinks to skills/)
-skills/                              — Standalone SKILL.md files (for manual / npx install)
-  └── ship-clean-code/               — Clean code skill
-      ├── SKILL.md                   — Core skill (12 principles, review format, pragmatism rules)
-      ├── reference.md               — Detailed rules (naming, functions, classes, errors, testing, logging)
-      ├── reference-smells.md        — 66 code smells checklist with detection & fixes
-      ├── lang-python.md             — Python idioms (type hints, async, pytest, common traps)
-      ├── lang-typescript.md         — TypeScript/JS idioms (type safety, React, Jest/Vitest)
-      ├── lang-java.md               — Java idioms (records, virtual threads, JUnit 5, Spring)
-      └── examples/                  — Before/after code transformations
+  ├── ship-clean-code/               — Plugin wrapper (symlinks to skills/ship-clean-code)
+  ├── ship-tested-code/              — Plugin wrapper (symlinks to skills/ship-tested-code)
+  ├── ship-debugged-code/            — Plugin wrapper (symlinks to skills/ship-debugged-code)
+  └── ship-reviewed-prs/             — Plugin wrapper (symlinks to skills/ship-reviewed-prs)
+skills/                              — Standalone SKILL.md directories (for manual / npx install)
+  ├── ship-clean-code/               — Clean code skill (12 principles, 66 smells, P1-P7 review)
+  │   ├── SKILL.md                   — Core skill (mode detection, review format, pragmatism)
+  │   ├── reference.md               — Detailed rules by concern (10 sections)
+  │   ├── reference-smells.md        — 66 code smells with detection & fixes
+  │   ├── lang-{python,typescript,java}.md — Language idioms
+  │   ├── overrides.example.md       — Team override template
+  │   ├── examples/                  — Before/after code transformations
+  │   └── tests/                     — Self-test fixtures (sample input + expected review)
+  ├── ship-tested-code/              — Testing skill (12 principles, 49 smells, T1-T7 review)
+  │   └── ... (same structure)
+  ├── ship-debugged-code/            — Debugging skill (12 principles, D1-D7 review)
+  │   └── ... (same structure)
+  └── ship-reviewed-prs/             — PR review workflow (5 personas, lifecycle suppression, decision matrix)
+      ├── SKILL.md                   — Workflow skill (disable-model-invocation, gh CLI integration)
+      ├── reference.md               — Fetch protocol, merge logic, decision matrix, submission protocol
+      ├── reference-personas.md      — Per-persona rubrics (SE, SC, IN, DA, TS)
+      ├── reference-lifecycle.md     — Six-state classification, won't-fix markers, fingerprinting
+      ├── lang-{python,typescript,java}.md — Per-language PR-review patterns
+      ├── overrides.example.md       — Team override template (ci_max_decision, won't-fix markers, etc.)
+      ├── examples/                  — Review-output samples, persona-delegation walkthrough, CI snippets
+      └── tests/                     — Four self-test fixtures (security, migration, lifecycle, clean-approve)
 templates/                           — Starter templates for creating new skills
 docs/                                — Guides on writing, testing, and sharing skills
 examples/                            — Integration examples for Claude Code, Cursor, etc.

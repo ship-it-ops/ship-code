@@ -1,0 +1,185 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs of the same workflow on the same ref. Saves CI minutes
+# when a PR is force-pushed.
+concurrency:
+  group: validate-skills-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  structure:
+    name: Skill structure & frontmatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run validator
+        run: python3 scripts/validate-skills.py --verbose
+
+  links:
+    name: Relative-link integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check skill links
+        run: python3 scripts/check-skill-links.py
+
+  markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run markdownlint-cli2
+        run: npx --yes markdownlint-cli2
+
+  json:
+    name: JSON validity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate every JSON file parses
+        run: |
+          set -e
+          fail=0
+          # find every committed JSON file (skip node_modules / .git / TEMP)
+          while IFS= read -r -d '' f; do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "::error file=$f::Invalid JSON"
+              python3 -m json.tool "$f" || true
+              fail=1
+            else
+              echo "ok: $f"
+            fi
+          done < <(find . \
+            -path ./node_modules -prune -o \
+            -path ./.git -prune -o \
+            -path ./TEMP -prune -o \
+            -type f -name '*.json' -print0)
+          exit $fail
+
+  yaml:
+    name: YAML validity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Validate every YAML file parses
+        run: |
+          set -e
+          fail=0
+          # Pass the filename via argv so the path isn't interpolated into Python
+          # source — a filename containing a single quote would otherwise turn
+          # the -c expression into a syntax error (or worse).
+          while IFS= read -r -d '' f; do
+            if ! python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1]))' "$f" 2>/dev/null; then
+              echo "::error file=$f::Invalid YAML"
+              python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1]))' "$f" || true
+              fail=1
+            else
+              echo "ok: $f"
+            fi
+          done < <(find . \
+            -path ./node_modules -prune -o \
+            -path ./.git -prune -o \
+            -path ./TEMP -prune -o \
+            -type f \( -name '*.yml' -o -name '*.yaml' \) -print0)
+          exit $fail
+
+  plugin-symlinks:
+    name: Plugin symlinks resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Symlinks are stored in git and need to be preserved on checkout
+          # (default on linux runners, but explicit is fine).
+          submodules: false
+
+      - name: Verify every plugin SKILL.md symlink resolves to a real file
+        run: |
+          set -e
+          fail=0
+          for plugin in plugins/*/; do
+            name=$(basename "$plugin")
+            expected="$plugin/skills/$name/SKILL.md"
+            if [ ! -e "$expected" ]; then
+              echo "::error file=$expected::Plugin SKILL.md symlink does not resolve."
+              echo "  This usually means the layout is plugins/$name/skills/SKILL.md"
+              echo "  (single-directory symlink) instead of plugins/$name/skills/$name/SKILL.md"
+              echo "  (per-file symlinks). Fix: re-create per-file symlinks under plugins/$name/skills/$name/."
+              fail=1
+            else
+              echo "ok: $expected -> $(readlink -f "$expected")"
+            fi
+          done
+          exit $fail
+
+  # Summary gate — all checks must pass. Useful for branch-protection rules:
+  # configure "Require status checks to pass before merging" against this job
+  # alone instead of having to list every individual check.
+  all:
+    name: All checks pass
+    if: always()
+    needs: [structure, links, markdown, json, yaml, plugin-symlinks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all required jobs succeeded
+        run: |
+          fail=0
+          for status in \
+            "${{ needs.structure.result }}" \
+            "${{ needs.links.result }}" \
+            "${{ needs.markdown.result }}" \
+            "${{ needs.json.result }}" \
+            "${{ needs.yaml.result }}" \
+            "${{ needs.plugin-symlinks.result }}"
+          do
+            if [ "$status" != "success" ]; then
+              fail=1
+            fi
+          done
+          if [ $fail -eq 1 ]; then
+            echo "::error::One or more validation jobs failed"
+            exit 1
+          fi
+          echo "All validation jobs passed."

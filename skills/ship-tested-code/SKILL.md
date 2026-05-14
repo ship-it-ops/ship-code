@@ -157,9 +157,9 @@ Rules for when NOT to be strict:
 Detect the programming language from file extensions and context. Load the appropriate
 language-specific reference:
 
-- `.py` files -> Read `${SKILL_DIR}/lang-python.md`
-- `.ts`, `.tsx`, `.js`, `.jsx` files -> Read `${SKILL_DIR}/lang-typescript.md`
-- `.java` files -> Read `${SKILL_DIR}/lang-java.md`
+- `.py` files → Read `lang-python.md`
+- `.ts`, `.tsx`, `.js`, `.jsx` files → Read `lang-typescript.md`
+- `.java` files → Read `lang-java.md`
 
 Apply universal principles first, then layer language-specific idioms on top. When the
 language is ambiguous or not covered, apply only universal principles.
@@ -208,12 +208,14 @@ Rules for the output:
 
 ## Team Overrides
 
-Before applying testing rules, check if `${SKILL_DIR}/overrides.md` exists. If it does,
-read it and apply its overrides. Team overrides supersede defaults. Use this for: test
-framework preferences, coverage thresholds, naming convention deviations, disabled rules.
+Before applying testing rules, check for override files in this order (later files win on conflicts):
 
-If a project has a `.claude/ship-tested-code-overrides.md` file, read it as well —
-project-level overrides take precedence over skill-level overrides.
+1. `overrides.md` next to this `SKILL.md` (team-wide overrides bundled with the skill)
+2. `.claude/ship-tested-code-overrides.md` in the user's project root (project-specific overrides)
+
+Read whichever exist and apply their rules on top of the defaults below. Use overrides for: test framework preferences, coverage thresholds, naming convention deviations, mocking policy, disabled rules, custom additions.
+
+A template is available at `overrides.example.md` — copy and edit. Do not modify `overrides.example.md` directly; it is reference material.
 
 ## Team Adoption
 
@@ -224,14 +226,25 @@ Phased rollout recommended:
 
 Track: T1/T2 findings per PR (should trend toward zero), flaky test rate, escaped defect rate.
 
+## Related Skills
+
+This skill assumes the production code is already reasonably structured. For deeper work in related areas, defer to the sibling skills:
+
+- **Production code quality, naming, SRP, refactoring** → invoke `ship-clean-code`. Hard-to-test code is often a clean-code problem (hidden dependencies, global state, oversized classes); fix the structure first, then test it.
+- **Investigating a specific bug or escape from your tests** → invoke `ship-debugged-code`. This skill flags missing regression tests; `ship-debugged-code` runs the root-cause analysis that produces them.
+- **Pull-request review (orchestrator)** → invoke `ship-reviewed-prs`. That skill computes the test-coverage gap signal (TS1, TS2) at the PR level and delegates test-quality depth back to this skill. When reviewing a PR, run `ship-reviewed-prs` first; it points you here when this skill's depth is warranted.
+
+When both apply, run this skill alongside or after the related one — clean structure makes test boundaries obvious.
+
 ## Reference Loading
 
-For deeper analysis, load supporting reference files:
+For deeper analysis, load supporting reference files alongside this `SKILL.md`:
 
-- Detailed rules by concern: `${SKILL_DIR}/reference.md`
-- Test smells checklist (~50 items): `${SKILL_DIR}/reference-smells.md`
-- Language-specific testing idioms: `${SKILL_DIR}/lang-{language}.md`
-- Before/after examples: `${SKILL_DIR}/examples/`
+- `reference.md` — Detailed rules organized by concern (design, strategy, TDD, mocking, data, flakiness, architectures, security/performance, resilience, culture)
+- `reference-smells.md` — 49 test smells with detection signatures and fixes (D1-D7, TD1-TD7, A1-A6, M1-M6, F1-F7, N1-N4, S1-S6, C1-C6)
+- `lang-python.md`, `lang-typescript.md`, `lang-java.md` — Language test idioms
+- `examples/python-before-after.md`, `examples/typescript-before-after.md`, `examples/java-before-after.md` — Concrete test refactoring examples
+- `examples/review-output-example.md` — End-to-end test review output sample
+- `tests/` — Self-test fixtures (sample test code + expected review output)
 
-Load these on-demand when doing thorough reviews or when the user asks for detailed
-guidance on a specific testing topic.
+Paths are relative to this `SKILL.md`. Load on-demand when doing thorough reviews or when the user asks for detailed guidance on a specific testing topic.

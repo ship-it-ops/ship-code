@@ -1,0 +1,1 @@
+../../../../skills/ship-tested-code/reference-smells.md

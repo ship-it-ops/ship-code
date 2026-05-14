@@ -1,0 +1,59 @@
+# Drop-in GitLab CI snippet that runs ship-reviewed-prs on merge requests.
+#
+# Add to .gitlab-ci.yml or include via a separate file.
+# Authentication: relies on a GitLab CI variable `GH_TOKEN` set in project settings
+# (or use `CI_JOB_TOKEN` if your skill talks to GitLab merge requests rather than
+# GitHub PRs — adjust the gh command accordingly).
+#
+# For cross-platform repos (GitLab CI building a project mirrored on GitHub),
+# set GH_TOKEN to a GitHub PAT with `repo` scope. The skill will talk to the
+# GitHub PR, not the GitLab MR.
+
+stages:
+  - review
+
+pr-review:
+  stage: review
+  image: node:20-bullseye
+  variables:
+    GH_TOKEN: $GH_TOKEN
+    # CI=true is set automatically by GitLab; the skill detects it.
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == "external_pull_request_event"
+      when: on_success
+  before_script:
+    # Install gh CLI
+    - apt-get update && apt-get install -y curl
+    - curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg
+        | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg]
+        https://cli.github.com/packages stable main"
+        | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    - apt-get update && apt-get install -y gh
+    # Install Claude Code CLI
+    - curl -fsSL https://claude.ai/cli/install.sh | bash
+    - export PATH=$HOME/.claude/bin:$PATH
+  script:
+    # The PR URL must be passed in. For a GitLab MR, you typically derive the
+    # GitHub PR URL from a mirror mapping; if there's no mirror, point the
+    # skill at the GitLab MR via the `glab` CLI variant.
+    - claude --skill ship-reviewed-prs "$PR_URL" --json > review-result.json
+    - cat review-result.json
+  artifacts:
+    when: always
+    paths:
+      - review-result.json
+    expire_in: 30 days
+  # Exit codes:
+  #   0 = APPROVE (or no findings) -> job passes
+  #   1 = REQUEST_CHANGES -> job fails -> blocks merge if "Pipeline must succeed" is set
+  #   2 = COMMENT -> job passes
+  #   3 = error -> job fails
+
+# ---
+# Strict variant: also fail on COMMENT.
+#
+# script:
+#   - claude --skill ship-reviewed-prs "$PR_URL" --strict --json > review-result.json

@@ -91,6 +91,8 @@ A comprehensive checklist of common code smells and how to fix them.
 
 ## Tests
 
+> Surface-level only. For full test-review coverage (49 smells, T1-T7 priority hierarchy), invoke the sibling skill `ship-tested-code`.
+
 | ID | Smell | How to Detect | How to Fix |
 |----|-------|---------------|------------|
 | T1 | Insufficient Tests | Code paths, edge cases, or branches untested | Add tests for every condition and boundary |

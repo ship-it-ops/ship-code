@@ -385,3 +385,19 @@ Use this for rapid test review scanning:
 | Mocking | Are mocks limited to external boundaries? |
 | Speed | Does the suite run fast enough to be used on every commit? |
 | Maintenance | Is test code reviewed with the same rigor as production code? |
+
+---
+
+## Sources
+
+This skill synthesizes principles from established works and modern industry practice:
+
+- **Test Driven Development: By Example** — Kent Beck (2002). The Red-Green-Refactor cycle, Fake It, Triangulation, Obvious Implementation, and One Step Test all come directly from this book.
+- **Full Stack Testing: A Practical Guide for Delivering Quality Software** — Gayathri Mohan (2022). Source for the test strategy framing (pyramid vs. trophy vs. diamond by architecture), CI pipeline layering, contract testing, and most of §7 (architecture-specific testing).
+- **xUnit Test Patterns** — Gerard Meszaros (2007). The test-double vocabulary (fake/mock/stub/spy), the Test Smells taxonomy, and Build-Operate-Check.
+- **Growing Object-Oriented Software, Guided by Tests** — Steve Freeman and Nat Pryce (2010). "Listen to the tests" as design feedback, mocking strategy at object boundaries.
+- **Working Effectively with Legacy Code** — Michael Feathers (2004). Characterization tests, seams, and the legacy-code testing strategy in §10.
+- **Site Reliability Engineering** — Beyer, Jones, Petoff, Murphy (2016). Source for canary deployments, synthetic monitoring, and chaos engineering practices in §9 (Resilience).
+- **Modern testing ecosystem** — pytest, Vitest, TestContainers, MSW, Playwright, Pact, hypothesis/fast-check/jqwik, ArchUnit, Pitest/Stryker/mutmut: documentation and consensus as of 2025.
+
+The skill's specific rule numbering (T1-T7 priority, ID prefixes in `reference-smells.md`) is original to this repo and chosen for review legibility.

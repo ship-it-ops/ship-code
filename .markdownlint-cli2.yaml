@@ -1,0 +1,92 @@
+# markdownlint-cli2 configuration for ship-code skills.
+#
+# Strategy: enforce real correctness (broken fenced blocks, broken link refs,
+# heading skips) but stay out of the way on style choices (line length, ATX
+# style, list markers). Skills are prose-heavy and contain many code examples;
+# style-strict rules generate too much noise.
+
+config:
+  # Default: all rules disabled. Opt in to the ones that catch real issues.
+  default: false
+
+  # MD001 — heading levels only increment by one. Catches accidental h1 -> h3 skips.
+  MD001: true
+
+  # MD003 — heading style consistency. ATX only (### Foo, not Foo\n===).
+  MD003:
+    style: "atx"
+
+  # MD009 — no trailing spaces (except for hard line break which we don't use).
+  MD009:
+    br_spaces: 0
+    list_item_empty_lines: false
+    strict: false
+
+  # MD011 — reversed link syntax `(text)[url]`. Catches typos.
+  MD011: true
+
+  # MD018 / MD019 — no missing space after # / no multiple spaces after #.
+  MD018: true
+  MD019: true
+
+  # MD020 / MD021 — closed ATX heading style consistency.
+  MD020: true
+  MD021: true
+
+  # MD022 — headings surrounded by blank lines.
+  MD022: false   # our skills use deliberate tight spacing under H3 (numbered principles)
+
+  # MD023 — headings start at the beginning of the line.
+  MD023: true
+
+  # MD031 — fenced code blocks surrounded by blank lines.
+  MD031: false   # same — code blocks intentionally tight under their headings
+
+  # MD032 — lists surrounded by blank lines.
+  MD032: false   # too noisy with our nested structure
+
+  # MD034 — bare URLs should be wrapped in angle brackets or markdown link.
+  MD034: false   # we use bare URLs in many examples deliberately
+
+  # MD040 — fenced code blocks have a language tag.
+  MD040: false   # too aggressive for our examples (some `output` blocks intentionally untagged)
+
+  # MD042 — no empty links `[](url)` or `[text]()`.
+  MD042: true
+
+  # MD045 — images have alt text.
+  MD045: true
+
+  # MD046 — code block style consistency (we use fenced, not indented).
+  MD046:
+    style: "fenced"
+
+  # MD048 — code fence style consistency (backtick, not tilde).
+  MD048:
+    style: "backtick"
+
+  # MD049 / MD050 — emphasis and strong style consistency.
+  MD049:
+    style: "asterisk"
+  MD050:
+    style: "asterisk"
+
+  # MD051 — link fragments should resolve. Our anchors aren't always pre-baked; skip.
+  MD051: false
+
+  # MD053 — link/image reference definitions actually used.
+  MD053: true
+
+# What to lint and what to ignore.
+globs:
+  - "**/*.md"
+
+ignores:
+  - "node_modules/**"
+  - ".git/**"
+  - "TEMP/**"
+  # Fixture .md files inside skills/*/tests/ are deliberately illustrative —
+  # they show synthetic PR diffs, expected review output, and other content
+  # that may include malformed-on-purpose Markdown (security examples,
+  # truncated snippets, etc.) and aren't intended to lint as production prose.
+  - "skills/*/tests/**/*.md"

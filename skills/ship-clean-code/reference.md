@@ -210,66 +210,20 @@ return user.getPlan().getRate();
 
 ---
 
-## 5. Testing
+## 5. Testing (Summary — see `ship-tested-code` for depth)
 
-### Principles
+The clean-code skill surfaces obvious testing gaps as part of broader code review. For test review, test design, mocking strategy, or flaky-test diagnosis, defer to the sibling skill `ship-tested-code`, which carries the full T1-T7 priority hierarchy and language-specific test idioms.
 
-1. **F.I.R.S.T.** Tests must be Fast, Independent (no ordering dependencies), Repeatable (in any environment), Self-validating (boolean pass/fail, no manual inspection), and Timely (written alongside production code).
-2. **One concept per test.** Each test verifies a single behavior. Multiple assertions are fine if they all verify the same concept.
-3. **Arrange-Act-Assert (AAA).** Structure every test in three distinct phases: set up the scenario, perform the action, verify the result.
-4. **Tests should read like specs.** A non-programmer should be able to read a test name and its body and understand what the system does.
-5. **Build-Operate-Check for integration tests.** Build the test data, operate on the system, check results -- keep these phases visually distinct.
-6. **Create a domain-specific testing language.** Write helper methods that read like domain operations: `givenACustomerWith(balance: 100)`, `whenWithdrawing(50)`, `thenBalanceIs(50)`.
-7. **Test everything that could break (T1).** If a line of code can fail in production, it deserves a test.
-8. **Use a coverage tool (T2).** Coverage highlights untested branches; treat gaps as questions, not just metrics.
-9. **Do not skip trivial tests (T3).** They serve as documentation and catch regressions.
-10. **An ignored test is a question about ambiguity (T4).** Do not `@Ignore` a test without a comment explaining the open question.
-11. **Test boundary conditions (T5).** Off-by-one, empty inputs, nulls, maximums, unicode, concurrency edges.
-12. **Exhaustively test near bugs (T6).** Bugs cluster. When you find one, write tests for adjacent logic.
-13. **Patterns of failure reveal root causes (T7).** When multiple tests fail, look at what they share.
-14. **Tests should be fast (T9).** Slow tests get skipped. Keep unit tests under 100ms each.
-15. **Choose test doubles by purpose.** Fake: replace a slow/external collaborator with a fast in-memory equivalent when you only care about state outcomes (repositories, caches, queues). Mock: verify interaction protocols — use when the assertion IS whether a call was made (e.g., "email sent exactly once"). Stub: provide canned responses. Prefer fakes for state-based tests; use mocks only for interaction-based tests. Never mock value objects.
-16. **Property-based testing for transformations.** When a function has a clear invariant (encode/decode roundtrip, sort order), generate random inputs. Libraries: `hypothesis` (Python), `fast-check` (TS), `jqwik` (Java).
-17. **Integration tests at boundaries, unit tests for logic.** Test I/O and external systems at the edges; test business rules with fast isolated unit tests.
-18. **Test names describe behavior, not implementation.** Use `should_X_when_Y` (Python/TS) or `@DisplayName("should X when Y")` (Java). A failing test name should tell you exactly what broke. Never use `test1`, `testProcess`, or `testHappyPath`.
-19. **Test behavior contracts, not implementation details.** Do not test: private methods, auto-generated code (records, dataclasses), third-party library behavior, or framework wiring. Test observable outputs for given inputs.
+### Minimum bar this skill enforces
 
-### Common Violations
+1. **Tests exist for non-trivial logic.** Untested business logic is a P4 (testability) finding.
+2. **F.I.R.S.T. properties.** Fast, Independent, Repeatable, Self-validating, Timely.
+3. **One behavior per test.** If a test verifies multiple unrelated behaviors, split it.
+4. **Test names describe behavior.** `should_X_when_Y`, not `test1` or `testHappyPath`.
+5. **No sleeps, no shared mutable state, no real external service calls** in unit tests — flag as P1 (correctness) when found because flaky tests erode trust in the suite.
+6. **Production code is testable.** Hidden dependencies, global state, and unbreakable static coupling are P4 findings whether or not tests exist yet — they block future testing.
 
-- Tests that depend on execution order or shared mutable state.
-- Tests that call real external services (network, database) without isolation.
-- Test methods named `test1`, `test2` with no indication of what they verify.
-- Assertions buried inside helper methods with no clear failure message.
-- Mock setups longer than the actual test logic.
-- Time-coupled tests: `assert result.timestamp == datetime.now()` fails on slow machines. Inject a clock and freeze time.
-- Sleep-based synchronization: `time.sleep(0.1)` or `Thread.sleep(500)` to wait for async operations. Use proper async test patterns.
-- Tests that leave filesystem/database state behind. Use setup/teardown, transaction rollback, or temp directories.
-
-### Quick Examples
-
-**Before:**
-```python
-def test_account():
-    a = Account()
-    a.deposit(100)
-    a.withdraw(50)
-    assert a.balance == 50
-    a.withdraw(100)
-    assert a.balance == 50  # overdraft blocked
-```
-
-**After:**
-```python
-def test_withdraw_reduces_balance():
-    account = Account(balance=100)
-    account.withdraw(50)
-    assert account.balance == 50
-
-def test_withdraw_exceeding_balance_is_rejected():
-    account = Account(balance=50)
-    account.withdraw(100)
-    assert account.balance == 50
-```
+For everything else (mocking patterns, test data factories, integration boundaries, property-based and mutation testing, test culture metrics), invoke `ship-tested-code`.
 
 ---
 
@@ -478,3 +432,19 @@ Use this for rapid code review scanning:
 | Comments | Does this comment explain *why*, not *what*? |
 | Formatting | Does this file read top-down like a newspaper article? |
 | Boundaries | Is every external dependency behind an interface I control? |
+
+---
+
+## Sources
+
+This skill synthesizes principles from established works and modern industry practice:
+
+- **Clean Code: A Handbook of Agile Software Craftsmanship** — Robert C. Martin (2008). The 12 core principles, the smell catalog (C/E/F/G/J/N/T identifiers), and the "newspaper metaphor" are direct lineage.
+- **Refactoring: Improving the Design of Existing Code** — Martin Fowler (2nd ed., 2018). Source for the rule-of-three, Strangler Fig pattern, and many of the refactoring move suggestions in §3 (Classes & Modules).
+- **The Pragmatic Programmer** — Andy Hunt and Dave Thomas (20th anniv. ed., 2019). DRY, the Boy Scout Rule, and pragmatism guidelines.
+- **Effective Java** — Joshua Bloch (3rd ed., 2018). Source for most of `lang-java.md` (records, equals/hashCode, immutables, dependency injection).
+- **Fluent Python** — Luciano Ramalho (2nd ed., 2022). Source for many idioms in `lang-python.md`.
+- **OWASP Top 10** — Open Web Application Security Project. Security findings (P2) reference OWASP categories.
+- **Industry consensus on observability and modern Java/Python/TypeScript** — virtual threads, structured logging, `as const`/`satisfies`, etc., reflect post-2022 ecosystem state.
+
+The skill's specific rule numbering (P1-P7 priority, ID prefixes in `reference-smells.md`) is original to this repo and chosen for review legibility.

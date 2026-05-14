@@ -1,0 +1,1 @@
+../../../../skills/ship-tested-code/lang-typescript.md
