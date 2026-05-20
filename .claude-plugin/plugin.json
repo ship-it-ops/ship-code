@@ -1,7 +1,7 @@
 {
   "name": "ship-it-ops",
-  "description": "Ship better code with AI. Production-quality skills for clean code, testing, debugging, PR review, and more.",
-  "version": "1.2.0",
+  "description": "Ship better code with AI. Production-quality skills for clean code, testing, debugging, security, PR review, and more.",
+  "version": "1.3.0",
   "author": {
     "name": "ship-it-ops"
   },
@@ -10,6 +10,7 @@
     "./skills/ship-clean-code",
     "./skills/ship-tested-code",
     "./skills/ship-debugged-code",
+    "./skills/ship-secure-code",
     "./skills/ship-reviewed-prs"
   ]
 }

@@ -95,7 +95,7 @@ Validation exists but doesn't cover the fields used downstream. E.g., the schema
 ### SEC2.4 — Normalization missing before comparison
 
 - Unicode: `"café"` vs `"café"` (composed vs decomposed) — both render identically but compare unequally. Normalize with NFC before allowlist check.
-- Path: `./foo`, `foo/`, `foo` are the same file but compare unequally. Use `os.path.normpath` / `Path.resolve` before allowlist.
+- Path: equivalent strings like `foo/bar`, `foo/bar/`, and `foo/./bar` can refer to the same file but compare unequally. Normalize with `os.path.normpath` / `Path.resolve` before allowlist.
 - URL: `https://example.com:443/` vs `https://example.com/` — normalize before host allowlist.
 
 ### False positives
