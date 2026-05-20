@@ -1,5 +1,5 @@
 {
   "name": "ship-reviewed-prs",
   "description": "Multi-persona pull-request review with lifecycle-aware suppression, decision matrix, and gh CLI submission (local with confirmation, CI fully automated).",
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

@@ -86,6 +86,17 @@ SE owns the **PR-shaped** concerns: changes that span files, public contracts, r
 
 SC scans every file regardless of bucket. On a shared finding with `ship-clean-code` P2-SEC, SC wins (it gets the prefix tag, not P2-SEC).
 
+### Delegation to `ship-secure-code`
+
+SC has two depth modes:
+
+- **Direct-emit** (single-line, high-precision patterns): hardcoded secret literal matching a known prefix (`sk_live_`, `AKIA`, `ghp_`, etc.); `dangerouslySetInnerHTML={{__html: userInput}}` where `userInput` is a clearly-tracked HTTP field; new HTTP route handler with no auth middleware between path and handler; `eval(userInput)` / `Function(userInput)`; `child_process.exec` with template literal; `jwt.decode(token, verify=False)`. These fire inline as SC1/SC2/SC3 findings without delegation.
+- **Delegate** (anything requiring data-flow trace, multi-file context, framework-specific knowledge, or one of the SEC4-SEC12 categories): emit a single `Run /ship-secure-code on <file>` bullet under Delegations. Example triggers: `db.query` with interpolated value where the value's source isn't visible in the same file; `prisma.findUnique({where: {id}})` where tenant scope may or may not be needed (depends on schema); ReDoS-shape regex; SSRF-shape `fetch(userUrl)`; deserialization sink; CORS misconfig (needs cross-file allowlist context).
+
+The delegation bullet does NOT count toward the decision matrix — same rule as other delegations. But if the SC direct-emit pass produces *1 findings, those still drive REQUEST_CHANGES.
+
+This mirrors the TS → `ship-tested-code` pattern at `SKILL.md:71-76` — orchestrator does shallow detection, the depth target owns the rubric.
+
 ### Finding IDs
 
 | ID | Label | When to fire |
@@ -255,6 +266,185 @@ When both fire on a single line, they're recorded with their distinct fingerprin
 
 ---
 
+## FE — Senior Frontend Engineer
+
+**Conditional.** Activates when the diff touches React component files (`*.tsx`, `*.jsx`, or `.ts`/`.js` files declaring `useState`/`useEffect`/returning JSX), framework configs (`next.config.*`, `vite.config.*`, `webpack.config.*`), a11y attributes (`aria-*`, `role=`, `tabIndex`), or library workspaces (`packages/*/src/`). Always escalates to subagent because it needs to read adjacent context: the test file alongside each component (to detect missing axe-state coverage), the package's `index.ts` for exported types, sibling `*.css.ts` token files, and `.changeset/*.md` bodies (for FE7 cross-check).
+
+### Concerns
+
+- **Accessibility contract correctness**: `aria-*` references resolve to elements actually rendered in the DOM; accessible names persist across display/edit DOM swaps; `role="img"` elements have a meaningful label.
+- **Controlled-vs-uncontrolled state desync**: `useEffect` that resets internal state/history every time a controlled prop changes; callbacks emitting a subset of internal state the consumer cannot reconstruct.
+- **Command-pattern / undo-history completeness**: keyboard handlers that bypass the dispatch path; delete operations that record overlapping commands twice.
+- **No-op prop values**: TypeScript union props with variants that no implementation branch matches.
+- **SSR / framework constraints**: global CSS imports inside non-entry modules (breaks Next.js App Router); `window`/`document` referenced at module top-level without `'use client'`.
+- **Numeric range/clamp at boundaries**: normalized 0..1 values crossing into a consumer expecting that range without clamping.
+- **Changeset / release-notes accuracy**: `.changeset/*.md` body claims scope that contradicts what the diff actually ships.
+- **Component-library hygiene**: package self-importing its own published asset path.
+
+### Anti-overlap
+
+FE does **not** emit findings about:
+- Color contrast, alt-text quality, or aria-label *content* quality (e.g., "this label is too vague") — those are `ship-clean-code` P5 smells.
+- React render performance (`useEffect` with no deps array running every render, unnecessary `useMemo`) — stays IN7-PERF-HOTPATH.
+- Test design, framework idioms, or AAA structure — TS persona / `ship-tested-code`.
+- Public-API contract drift on backend SDKs — SE2.
+
+FE owns **frontend correctness as the user (and consumer) experiences it**: did the component honor the contract it advertises, and does the rendered DOM satisfy the a11y attributes attached to it?
+
+| Concern | FE or other |
+|---------|-------------|
+| `aria-errormessage` references a non-existent id | FE1 |
+| Display element has `aria-label` but the `<input>` it swaps to has none | FE1 |
+| `useEffect` resets command history on every prop change | FE2 |
+| `onConnect` callback emits `{source, target}` but the internal handler generates an id | FE2 |
+| Arrow-key nudges bypass the command-history dispatch | FE3 |
+| Two command entries pushed in the same user action with overlapping scope | FE3 |
+| TS prop type `'click' \| 'focus'` accepted but only `'click'` is branched on | FE4 |
+| `import './styles.css'` inside a non-entry React module | FE5 |
+| `viewportRect.width` can be > 1, sent to a consumer expecting [0,1] | FE6 |
+| `.changeset/X.md` says "lands later" but X ships in this PR | FE7 |
+| Package self-imports its own published asset path | FE8 |
+| `useEffect(() => { ... })` with no deps array running every render | IN7 (not FE) |
+| Color contrast on text-vs-background | `ship-clean-code` |
+| New component has no test file | TS1 |
+
+### Finding IDs
+
+| ID | Label | When to fire |
+|----|-------|--------------|
+| FE1 | A11Y-CONTRACT-BROKEN | An `aria-*` attribute references a target that isn't rendered in the same component tree, OR an accessible name sits on an element that gets swapped for a different element type (display→input) without the name carrying over, OR a `role="img"` lacks `aria-label`/`aria-labelledby` when no other accessible name applies. |
+| FE2 | CONTROLLED-STATE-DESYNC | A controlled component re-syncs internal state from a prop with `useEffect` and resets internal history/selection on that sync, OR a callback emits a subset of internal state (e.g. `{source, target}`) while the internal handler generates an id/timestamp the consumer cannot reproduce, OR an internal command stores more data than the corresponding outward callback emits. |
+| FE3 | COMMAND-HISTORY-INCOMPLETE | A keyboard/imperative handler mutates state but bypasses the same command/dispatch path used by click/menu handlers, OR two command entries are pushed in the same user action with overlapping scope (e.g. `delete-node` already cascades incident edges + a separate `delete-edge` is also pushed for those same edges, so undo re-adds them twice). |
+| FE4 | NO-OP-PROP-VALUE | A TypeScript union prop accepts a value that no implementation branch matches (e.g. `activate: 'click' \| 'focus'` but no `if (activate === 'focus')` or `switch(activate) { case 'focus':` anywhere). |
+| FE5 | SSR-GLOBAL-CSS | Non-entry module contains `import './styles.css'` (Next.js App Router only permits global CSS imports from `layout.tsx`/`_app.tsx`), OR `window`/`document` referenced at module top-level without `'use client'`. |
+| FE6 | RANGE-CLAMP-MISSING | A computed normalized value lacks `Math.max(0, Math.min(1, x))` clamping at the boundary, OR an arithmetic output crosses into a downstream consumer's documented numeric range without validation. |
+| FE7 | CHANGESET-DRIFT | A `.changeset/*.md` body describes scope that contradicts the diff. Includes "lands in next iteration" / "follow-up PR will add X" claims that conflict with code present in the same PR. |
+| FE8 | REDUNDANT-INTERNAL-IMPORT | A package internally imports its own published asset path (e.g. `@scope/pkg/styles.css` from inside `packages/pkg/src/`), or a module both exports a side-effecting stylesheet via `package.json#exports` AND internally `import`s it. |
+
+### Examples
+
+**FE1 firing (a11y target missing):**
+```diff
++<input
++  aria-invalid={error ? true : undefined}
++  aria-errormessage={error ? `${rest.id ?? 'inline-edit'}-error` : undefined}
++  className={inputStyles({ size, tone: error ? 'err' : 'default' })}
++/>
+```
+> **[FE1-A11Y-CONTRACT-BROKEN] packages/ui/src/components/InlineEdit/InlineEdit.tsx:234**: `aria-errormessage` references `${id}-error`, but no element with that id is rendered in the component tree. The string returned by `validate()` lives only in `error` state — sighted users get the red border, AT users get a dangling ARIA reference. → Render the error inline: `{error && <p id={`${id}-error`} role="alert" className="text-err mt-1 text-[11px]">{error}</p>}` and wrap the `<input>` + `<p>` in a fragment.
+
+**FE1 firing (accessible-name carryover):**
+```diff
+ if (!editing) {
+   return <button aria-label={`Edit ${value}`} onClick={startEdit}>{value}</button>;
+ }
+-return <input value={draft} onChange={...} />;
++return <input value={draft} onChange={...} />;
+```
+> **[FE1-A11Y-CONTRACT-BROKEN] packages/ui/src/components/InlineEdit/InlineEdit.tsx:223**: When the component swaps from display to edit mode, the display element's `aria-label="Edit ${value}"` doesn't carry to the `<input>`. Screen readers announce nothing meaningful for the input that just appeared. → Apply the same computed label to the input: `<input aria-label={`Editing ${value}`} ...>` (or `aria-labelledby` pointing to a stable id).
+
+**FE2 firing (history reset on every controlled-prop change):**
+```diff
++useEffect(() => {
++  setNodes(adapter.nodesToReactFlow(elements));
++  setEdges(adapter.edgesToReactFlow(elements));
++  history.reset();
++}, [elements]);
+```
+> **[FE2-CONTROLLED-STATE-DESYNC] packages/graph-editor/src/GraphEditorCanvas.tsx:175**: This effect re-syncs internal state from the `elements` prop and resets history on every change. Consumers who update `elements` in response to `onNodeMove`/`onConnect` (as the docs examples do) will see history cleared after every edit — undo/redo is unusable. → Treat `elements` as initial state (rename to `initialElements`, sync only on mount + an explicit `resetKey`), or move history into the controlled value.
+
+**FE2 firing (callback emits less than the internal command stores):**
+```diff
++function handleConnect(params: { source: string; target: string }) {
++  const newEdge = { id: `e-${Date.now()}`, ...params };
++  applyCommand({ kind: 'add-edge', edge: newEdge });
++  onConnect?.({ source: params.source, target: params.target });
++}
+```
+> **[FE2-CONTROLLED-STATE-DESYNC] packages/graph-editor/src/GraphEditorCanvas.tsx:231**: `handleConnect` generates an internal edge id (`e-${Date.now()}`) but the outward `onConnect` callback only emits `{source, target}`. A controlled consumer will create an edge with a different id. Internal history/selection/edge-delete events then diverge from the consumer's persisted graph. → Either include the generated id in the callback (`onConnect?.({ source, target, id: newEdge.id })`) or accept a `createEdgeId` factory prop so the consumer chooses.
+
+**FE3 firing (keyboard bypasses command dispatch):**
+```diff
++useGraphEditorKeyboard({
++  onArrow: (direction) => {
++    const change = makePositionChange(direction);
++    baseOnNodesChange([change]);  // bypasses applyCommand → not in history
++  },
++});
+```
+> **[FE3-COMMAND-HISTORY-INCOMPLETE] packages/graph-editor/src/GraphEditorCanvas.tsx:387**: Arrow-key nudges flow through `baseOnNodesChange` while drag-end goes through `applyCommand`. `⌘Z` will undo drags but not nudges, and the keyboard path silently corrupts history when interleaved with mouse actions. → Route both through `applyCommand({ kind: 'move-node', from, to })`.
+
+**FE3 firing (overlapping command entries):**
+```diff
++function handleDelete() {
++  deleteSelectedNodes();  // applyCommand({ kind: 'delete-node', incidentEdges })
++  deleteSelectedEdges();  // applyCommand({ kind: 'delete-edge', edge }) for each
++}
+```
+> **[FE3-COMMAND-HISTORY-INCOMPLETE] packages/graph-editor/src/GraphEditorCanvas.tsx:397**: When Delete is pressed with both nodes and edges selected, `deleteSelectedNodes()` records a `delete-node` command that includes incident edges in its inverse, AND `deleteSelectedEdges()` records `delete-edge` for each selected edge. If a selected edge is incident to a selected node, undo re-adds it twice (duplicate edges). → Dedup: before pushing `delete-edge` commands, subtract edges already covered by a `delete-node` in this batch.
+
+**FE4 firing (dead variant):**
+```diff
+ export type Activation = 'click' | 'focus';
+ export interface InlineEditProps {
+   activate?: Activation;
+   ...
+ }
+
+ function handleClick() {
+   if (activate === 'click') startEdit();
+ }
+```
+> **[FE4-NO-OP-PROP-VALUE] packages/ui/src/components/InlineEdit/InlineEdit.tsx:86**: `activate` accepts `'focus'`, but no implementation branch on `activate === 'focus'` exists. The prop value is type-system-valid and silently does nothing at runtime. → Either implement focus activation (start edit on `onFocus` when `activate === 'focus'`), or remove `'focus'` from the `Activation` union.
+
+**FE5 firing:**
+```diff
++import './styles.css';
++
++export function GraphEditorCanvas(props) { ... }
+```
+> **[FE5-SSR-GLOBAL-CSS] packages/graph-editor/src/GraphEditorCanvas.tsx:34**: Global CSS imported inside a non-entry module. Next.js App Router only permits global CSS imports from `layout.tsx`/`_app.tsx`. The package already exports `@ship-it-ui/graph-editor/styles.css` for consumer-side import. → Drop the internal import; document that consumers must import the stylesheet once from their entry module.
+
+**FE6 firing:**
+```diff
++function computeViewportRect(viewport, bbox) {
++  const tl = projectToBbox(viewport.tl, bbox);
++  const br = projectToBbox(viewport.br, bbox);
++  return { x: clamp01(tl.x), y: clamp01(tl.y), width: br.x - tl.x, height: br.y - tl.y };
++}
+```
+> **[FE6-RANGE-CLAMP-MISSING] packages/graph-editor/src/MiniMap.tsx:92**: `viewportRect.width/height` can exceed 1 when the viewport is panned past the graph bbox. `GraphMinimap` expects normalized 0..1 fractions; values > 1 produce rendering artifacts (rect extends past the minimap frame). → Clamp width/height using the already-clamped top-left: `width: clamp01(br.x) - clamp01(tl.x)`, same for height.
+
+**FE7 firing:**
+```diff
++---
++"@ship-it-ui/graph-editor": minor
++---
++
++Initial GraphEditorCanvas surface. Renders nodes/edges and emits onNodeMove/onConnect/onSelect.
++
++Keyboard handling, undo/redo, mini-map, and the +Add palette land in the next iteration.
+```
+> **[FE7-CHANGESET-DRIFT] .changeset/add-graph-editor-canvas.md:7**: Changeset says keyboard/undo/mini-map/+Add "land in the next iteration", but those behaviors are implemented in this PR (see `keyboard.ts`, `history.ts`, `MiniMap.tsx`, and the `applyCommand({ kind: 'add-node' })` path in `GraphEditorCanvas.tsx`). Release notes will be misleading and downstream consumers will not know the surface is available. → Either remove this changeset (a sibling changeset already covers the behaviors) or rewrite the body to describe what actually ships.
+
+**FE8 firing:**
+```diff
++// inside packages/graph-editor/src/GraphEditorCanvas.tsx
++import '@ship-it-ui/graph-editor/styles.css';
+```
+> **[FE8-REDUNDANT-INTERNAL-IMPORT] packages/graph-editor/src/GraphEditorCanvas.tsx:34**: Package internally imports its own published asset path. This forces a self-loop through the package resolver and tends to break under bundlers that haven't resolved the workspace yet. → Use a relative import (`import './styles.css'`) if internal, or — better, per FE5 — drop the internal import entirely and document consumer-side import.
+
+### Common false-positives
+
+- **FE1 on `aria-label={label}` where `label` is a ReactNode at the type level but a string at runtime.** The fallback path matters; the rubric only fires when the fallback branch does the wrong thing for AT.
+- **FE2 on small controlled components without internal history or command pattern.** The desync only matters when the component owns multi-step state. If the component is a stateless render of `value` + emits `onChange`, FE2 doesn't apply.
+- **FE5 when the file IS the entry module** (`layout.tsx`, `_app.tsx`, `page.tsx`, `main.tsx`, `index.html`-loaded entry). Do not fire.
+- **FE6 when the value is already clamped at the producer.** One side of the boundary is enough; only fire when neither side clamps.
+- **FE7 when the changeset content matches the diff.** The mismatch IS the fire condition. Generic / boilerplate changeset bodies are not FE7.
+- **FE4 on union props whose unmatched variant is intentionally a "future" surface** if the variant is annotated `/** @experimental */` or `@deprecated`. Note in Confidence; don't fire.
+
+---
+
 ## TS — Test Reviewer
 
 **Always on, delegation-only.** TS exists to surface the gap signal at the PR-review level. All test-quality depth (AAA, mocking, flakiness, naming) defers to `/ship-tested-code`.
@@ -300,9 +490,10 @@ Both findings ALWAYS render as a single delegation bullet, never as a long inlin
 The order matters for dedup. Within the orchestrator's context, run:
 
 1. **SC** first — highest-priority, scans everything, sets the strongest fingerprints. Other personas dedup against SC.
-2. **DA** second (if activated) — owns schema priority. Runs as subagent in parallel with IN-deep.
-3. **IN** third (light or deep) — operational dimension.
-4. **SE** fourth — synthesis lead; reviews the diff after the specialist personas have set their fingerprints, so SE can focus on cross-cutting concerns.
-5. **TS** last — computes ratios from final file list and PR description.
+2. **DA** second (if activated) — owns schema priority. Runs as subagent in parallel with IN-deep and FE.
+3. **FE** third (if activated) — frontend-correctness specialist. Runs as subagent in parallel with DA and IN-deep.
+4. **IN** fourth (light or deep) — operational dimension.
+5. **SE** fifth — synthesis lead; reviews the diff after the specialist personas have set their fingerprints, so SE can focus on cross-cutting concerns. On TSX files, FE2-CONTROLLED-STATE-DESYNC wins over SE2-CONTRACT-DRIFT in dedup (FE2 framing is more actionable for component consumers).
+6. **TS** last — computes ratios from final file list and PR description.
 
 This ordering is intentional: specialists first (they have the strongest claim on their domain), generalists last (they fill remaining gaps).

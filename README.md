@@ -9,7 +9,7 @@ Built on the [Agent Skills open standard](https://agentskills.io) and the Claude
 
 ## Featured Skills
 
-Four skills covering the lifecycle of production code — write it clean, prove it works, fix it when it breaks, and review the pull request before it merges. The first three share the same architecture: two modes per skill (writing/review for `ship-clean-code` and `ship-tested-code`; investigation/review for `ship-debugged-code`), language-specific idioms for Python, TypeScript/JavaScript, and Java, and priority-tagged review output. The fourth (`ship-reviewed-prs`) orchestrates a multi-persona PR review and composes with the others via delegation.
+Five skills covering the lifecycle of production code — write it clean, prove it works, fix it when it breaks, harden it against attack, and review the pull request before it merges. The first four share the same architecture: two modes per skill (writing/review for `ship-clean-code` and `ship-tested-code`; investigation/review for `ship-debugged-code`; review-only for `ship-secure-code`), language-specific idioms for Python, TypeScript/JavaScript, and Java, and priority-tagged review output. The fifth (`ship-reviewed-prs`) orchestrates a multi-persona PR review and composes with the others via delegation.
 
 ### ship-clean-code
 
@@ -44,16 +44,27 @@ Investigate and resolve bugs systematically — hypothesis-driven, with regressi
 - Priority-ranked findings (D1-Cannot Reproduce through D7-Documentation)
 - Regression-test-driven fixes — every confirmed bug ships with a test that fails before the fix
 
-### ship-reviewed-prs
+### ship-secure-code
 
-A senior-team review of every pull request — security, infra, data, and engineering perspectives in one pass, with comment-lifecycle awareness and a decisive verdict.
+Application-security depth across the 12 OWASP-aligned categories — for writing security-sensitive code under review or as the delegation target when `ship-reviewed-prs` SC needs depth beyond a one-line pattern match.
 
 **What it covers:**
-- Five personas (SE Senior Engineer, SC Senior Security Engineer, IN Senior Infra/SRE, DA Senior Data Engineer conditional, TS Test Reviewer delegation-only) with distinct rubrics that compose into a single priority-ordered review
+- 12 categories (SEC1 AUTH, SEC2 INPUT-VALIDATION, SEC3 INJECTION, SEC4 XSS/OUTPUT-ENCODING, SEC5 CSRF/ORIGIN, SEC6 CRYPTO, SEC7 SECRETS, SEC8 SUPPLY-CHAIN, SEC9 PII/LOGGING, SEC10 RESOURCE-EXHAUSTION, SEC11 PATH-TRAVERSAL/FILE-OPS, SEC12 DESERIALIZATION/SSRF) with tier-1 (must-fix) and tier-2 (should-fix) sub-tags
+- Data-flow trace required for every Critical finding — source, sink, and the path between them, so reviewers can verify the finding without reading the full file
+- Framework-specific patterns: Express, Next.js App Router, Next.js Pages Router, NestJS, tRPC, Django, FastAPI, Flask, Pyramid, SQLAlchemy, Spring Boot, JPA, Servlet, JAX-RS
+- Review-only (does not auto-remediate) — the skill identifies, traces, and recommends; the human applies and tests
+- Composes with `ship-reviewed-prs` via SC delegation, with `ship-tested-code` for security-regression test design
+
+### ship-reviewed-prs
+
+A senior-team review of every pull request — security, infra, data, frontend, and engineering perspectives in one pass, with comment-lifecycle awareness and a decisive verdict.
+
+**What it covers:**
+- Six personas (SE Senior Engineer, SC Senior Security Engineer, IN Senior Infra/SRE, DA Senior Data Engineer conditional, FE Senior Frontend Engineer conditional, TS Test Reviewer delegation-only) with distinct rubrics that compose into a single priority-ordered review
 - Six-state comment lifecycle (RESOLVED, OUTDATED, WONT_FIX, ADDRESSED, STALE, OPEN) — re-raised findings get suppressed silently, won't-fix markers are honored, "possibly addressed" is surfaced for human confirmation
 - Deterministic decision matrix: APPROVE / REQUEST_CHANGES / COMMENT with no LLM negotiation
 - Local mode with interactive confirmation gate; CI mode with full automation, exit codes for pipeline gating, `--json` output, and `ci_max_decision` override for teams whose policy forbids bot approvals
-- Composes with the other three skills via a delegation table — naming/readability goes to `ship-clean-code`, test depth to `ship-tested-code`, root-cause to `ship-debugged-code`
+- Composes with the other four skills via a delegation table — naming/readability goes to `ship-clean-code`, test depth to `ship-tested-code`, root-cause to `ship-debugged-code`, security depth to `ship-secure-code`
 
 ## Installation
 
@@ -69,6 +80,7 @@ This repo is a Claude Code plugin marketplace. Add it once and get access to all
 /plugin install ship-clean-code@ship-code
 /plugin install ship-tested-code@ship-code
 /plugin install ship-debugged-code@ship-code
+/plugin install ship-secure-code@ship-code
 /plugin install ship-reviewed-prs@ship-code
 
 # To see all available skills:
@@ -243,6 +255,7 @@ plugins/                             — Plugin-packaged skills (for marketplace
   ├── ship-clean-code/               — Plugin wrapper (symlinks to skills/ship-clean-code)
   ├── ship-tested-code/              — Plugin wrapper (symlinks to skills/ship-tested-code)
   ├── ship-debugged-code/            — Plugin wrapper (symlinks to skills/ship-debugged-code)
+  ├── ship-secure-code/              — Plugin wrapper (symlinks to skills/ship-secure-code)
   └── ship-reviewed-prs/             — Plugin wrapper (symlinks to skills/ship-reviewed-prs)
 skills/                              — Standalone SKILL.md directories (for manual / npx install)
   ├── ship-clean-code/               — Clean code skill (12 principles, 66 smells, P1-P7 review)
@@ -257,15 +270,23 @@ skills/                              — Standalone SKILL.md directories (for ma
   │   └── ... (same structure)
   ├── ship-debugged-code/            — Debugging skill (12 principles, D1-D7 review)
   │   └── ... (same structure)
-  └── ship-reviewed-prs/             — PR review workflow (5 personas, lifecycle suppression, decision matrix)
+  ├── ship-secure-code/              — Application-security skill (12 SEC categories, tier-1/tier-2/tier-3-5)
+  │   ├── SKILL.md                   — Core skill (12 principles, 12-category catalog, decision matrix)
+  │   ├── reference.md               — Methodology, sources (OWASP Top 10, ASVS, CWE), anti-overlap
+  │   ├── reference-categories.md    — Deep rubric per SEC1-SEC12 (antipatterns, fixes, false-positives)
+  │   ├── lang-{python,typescript,java}.md — Per-language detection patterns
+  │   ├── overrides.example.md       — Team override template
+  │   ├── examples/                  — Review-example and fix-example walkthroughs
+  │   └── tests/                     — Three fixtures (xss, sqli, missing-authz)
+  └── ship-reviewed-prs/             — PR review workflow (6 personas, lifecycle suppression, decision matrix)
       ├── SKILL.md                   — Workflow skill (disable-model-invocation, gh CLI integration)
       ├── reference.md               — Fetch protocol, merge logic, decision matrix, submission protocol
-      ├── reference-personas.md      — Per-persona rubrics (SE, SC, IN, DA, TS)
+      ├── reference-personas.md      — Per-persona rubrics (SE, SC, IN, DA, FE, TS)
       ├── reference-lifecycle.md     — Six-state classification, won't-fix markers, fingerprinting
       ├── lang-{python,typescript,java}.md — Per-language PR-review patterns
       ├── overrides.example.md       — Team override template (ci_max_decision, won't-fix markers, etc.)
-      ├── examples/                  — Review-output samples, persona-delegation walkthrough, CI snippets
-      └── tests/                     — Four self-test fixtures (security, migration, lifecycle, clean-approve)
+      ├── examples/                  — Review-output samples (incl. fe-review-example), persona-delegation walkthrough, CI snippets
+      └── tests/                     — Six self-test fixtures (security, migration, lifecycle, clean-approve, frontend regression, frontend clean)
 templates/                           — Starter templates for creating new skills
 docs/                                — Guides on writing, testing, and sharing skills
 examples/                            — Integration examples for Claude Code, Cursor, etc.

@@ -114,7 +114,7 @@ Proceed? Type "yes" to submit, "edit" to revise the body, "no" to abort.
 ## What this example demonstrates
 
 1. **Decision is decisive**: REQUEST_CHANGES, with a one-line reason and substantive Confidence section.
-2. **Multi-persona findings**: SC (log leakage), DA (migration), IN (timeout, observability), SE (contract drift), TS (delegation only).
+2. **Multi-persona findings**: SC (log leakage), DA (migration), IN (timeout, observability), SE (contract drift), TS (delegation only). For a worked example with the FE persona engaged, see `examples/fe-review-example.md`.
 3. **Strict priority tiering**: Critical = priority 1-2, Important = 3-5, Suggestions = 6-7. The example follows this rule even where the resulting tier is stricter than gut feel (SC7 LOG-LEAKAGE in Suggestions, IN2 OBSERVABILITY-GAP in Critical). Consistency across reviews matters more than per-finding intuition — if a number feels wrong, the fix is to renumber the persona, not to violate the rule in one example.
 4. **Won't-fix suppression**: a candidate DA5-TYPE-PRECISION finding (the TEXT column could be ENUM) is *not* emitted because Thread A already marked the typing concern won't-fix and tracked it in #4820. Dropped silently into the suppressed-finding counter.
 5. **Open-thread suppression**: the admin-auth concern (SC1) is *also* not re-raised as a fresh inline finding — Thread C already covers it. Instead, the thread is surfaced under "Open threads (still need author response)" with its original framing, and its priority-1 weight still drives the decision matrix to REQUEST_CHANGES. This is the difference between "duplicate the team's existing work" and "leverage it."
