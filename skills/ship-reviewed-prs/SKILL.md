@@ -106,6 +106,7 @@ The skill runs five personas against every PR. The first three (SE, SC, IN-light
 | SC | Senior Security Engineer | Always | AuthN/Z, injection, secrets, crypto, supply-chain, PII, log leakage. Overrides `ship-clean-code` P2-SEC on overlap. |
 | IN | Senior Infra / SRE / DevOps | Always (light); deep when infra files touched | Timeouts, retries, idempotency, observability, resource limits, CI/CD, IaC, migration safety (ops dimension). |
 | DA | Senior Data Engineer | Conditional on schema/event/migration files | Schema break risk, data loss, backfill, indexes, type precision, event-contract evolution, retention/PII. |
+| FE | Senior Frontend Engineer | Conditional on tsx/jsx/component files | A11Y contract correctness, controlled-component state desync, command/history completeness, no-op prop values, SSR/global-CSS constraints, range clamping, changeset accuracy. |
 | TS | Test Reviewer | Always (delegation-only) | Surfaces test-coverage gap signals. All test-quality depth defers to `ship-tested-code`. |
 
 Full persona rubrics — concerns, triggers, anti-overlap rules, finding examples — live in `reference-personas.md`.
@@ -125,6 +126,15 @@ Full persona rubrics — concerns, triggers, anti-overlap rules, finding example
 - `.github/workflows/`, `.gitlab-ci.yml`, `circle.yml`, `.circleci/`, `Jenkinsfile`
 - `infra/`, `deploy/`, `ops/` (project convention)
 
+**FE activates** when the diff touches any of:
+- `*.tsx`, `*.jsx`
+- `*.ts` / `*.js` that declare `useState`, `useEffect`, or return JSX
+- `next.config.*`, `vite.config.*`, `webpack.config.*`
+- A new `import './*.css'` line inside a non-entry module
+- A new `aria-*`, `role=`, or `tabIndex` attribute on any element
+- `packages/*/src/` in a React/UI library workspace
+- `.changeset/*.md` accompanying any of the above (FE7 cross-checks changeset vs. diff)
+
 Triggers are tunable via `overrides.md` — see Team Overrides below.
 
 ## Delegation Table
@@ -136,6 +146,7 @@ Personas defer to sibling skills rather than duplicating their rubrics. The deci
 | Naming, function size, magic numbers, dead code, error swallowing, readability | `Run /ship-clean-code on <file>` |
 | Test design, test coverage depth, flakiness, AAA structure, mocking strategy | `Run /ship-tested-code on <file>` |
 | Root cause of a bug the PR claims to fix (PR description contains "fixes #N") | `Run /ship-debugged-code on PR #N` |
+| Security depth (data-flow trace, framework-specific injection / XSS / SSRF / deserialization / supply chain / crypto / IDOR) beyond a one-line SC pattern match | `Run /ship-secure-code on <file>` |
 
 A "Delegations" section in the output lists these. They do NOT count toward the decision matrix — they are advisory pointers.
 
@@ -200,9 +211,10 @@ The skill runs as a hybrid: always-on personas in-context, conditional personas 
 
 3. **Always-on personas** run bracketed in-context, sequenced SE → SC → IN(light) → TS(gap-check). Each pass reads only its relevant file buckets.
 
-4. **Conditional escalation** (Explore subagents, up to 2 in parallel):
+4. **Conditional escalation** (Explore subagents, up to 3 in parallel):
    - If DA activates: spawn one subagent with the DA rubric and the schema/migration/event files. The subagent reads adjacent context (existing schema, downstream consumers) the orchestrator hasn't fetched.
    - If IN deep mode activates: spawn one subagent with the IN deep rubric and the infra files.
+   - If FE activates: spawn one subagent with the FE rubric and the component/tsx files. The subagent reads adjacent test files alongside each component (to detect missing axe-state coverage), the package's `index.ts` for exported types, and any sibling `*.css.ts` token files. It also reads `.changeset/*.md` bodies to cross-check FE7-CHANGESET-DRIFT.
 
 5. **Merge phase** (orchestrator):
    - Deduplicate by fingerprint `(path, line ± 5, root-cause-token)`. Higher-priority persona wins (SC > SE; DA > IN on schema files).
@@ -363,6 +375,7 @@ PRs over 100 comments deserve special handling:
 - **`/ship-clean-code`** — File-level code-quality review (naming, SRP, error handling, 66 smells). The SE persona delegates here.
 - **`/ship-tested-code`** — Test-quality review (T1-T7 hierarchy, mocking strategy, flakiness). The TS persona always delegates here for depth.
 - **`/ship-debugged-code`** — Bug investigation and root-cause analysis. Useful on bugfix PRs ("fixes #N") to verify the fix is at the right layer.
+- **`/ship-secure-code`** — Application-security depth (SEC1-SEC12: auth, input validation, injection, XSS, CSRF/origin, crypto, secrets, supply chain, PII/logging, resource exhaustion, path traversal, deserialization/SSRF). The SC persona scans the diff with high-precision single-line patterns and delegates anything requiring data-flow trace or framework-specific depth here.
 
 This skill is the **orchestrator** that brings PR context (diff, threads, CI status) to the others. The others provide the file-level rubrics.
 
@@ -393,6 +406,17 @@ Phased rollout recommended:
 - **Month 3+**: Full CI integration with REQUEST_CHANGES gating. Track: false-positive rate (findings reverted by maintainer), suppression accuracy (findings re-raised that were already discussed), time-to-first-review.
 
 Track: false-positive rate per PR (target trending toward zero), reviewer-feedback signal in `overrides.md` (which marker phrases the team adds), CI gating effectiveness (PRs that needed `--strict` vs. didn't).
+
+### Monthly eval (recommended)
+
+Each month, pick 3-5 PRs from the prior month that received human review or an external bot (Copilot, Codacy, etc.) review. Re-run `ship-reviewed-prs` against those PRs locally — it's just `gh` calls + the skill, takes 2-3 minutes per PR. Track in a CSV:
+
+| pr_url | skill_findings | external_findings | overlap | skill_missed | skill_extra |
+|--------|---------------|--------------------|---------|--------------|-------------|
+
+After 3 months the trend tells you whether new finding IDs are needed. The FE persona itself was added because this kind of eval caught a 10-finding gap on a single design-system PR. If a category (e.g., FE, IN-deep) is consistently catching fewer findings than the external review, that category's rubric likely has gaps; extend `lang-*.md` or `reference-personas.md` accordingly.
+
+Do not build a full automated corpus eval. The 3-5-PR manual cadence is enough signal for a six-month horizon and avoids the trap of optimizing for a fixed test set (Goodhart's law).
 
 ## Reference Loading
 

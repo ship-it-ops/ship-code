@@ -116,6 +116,7 @@ Persona file selectivity:
 - IN-light: `code` (flags missing timeouts/retries)
 - IN-deep: `infra`
 - DA: `schema`
+- FE: `code` (TSX/JSX-shaped files, plus adjacent test/index/css.ts and `.changeset/` files for context)
 - TS: `code` (to compute the test-coverage ratio)
 
 `generated` and `vendor` are skipped by all personas. Count them in the output ("12 generated, 3 vendor files skipped").
@@ -165,8 +166,9 @@ fingerprint = (path, floor(line / 5), root_cause_token)
 Where `root_cause_token` is a normalized form of the finding's category (e.g., `MISSING_AUTH`, `SQL_INJECTION`, `NO_TIMEOUT`, `BACKFILL_MISSING`). The skill's prompt defines the canonical token list; new categories are added explicitly, not invented at runtime.
 
 Conflict resolution:
-- Higher-priority persona wins. Within tiers: SC > IN > DA > SE > TS.
+- Higher-priority persona wins. Within tiers: SC > FE > IN > DA > SE > TS.
 - Exception: on schema files (DA-activated), DA wins over IN.
+- Exception: on TSX/JSX files (FE-activated), FE2-CONTROLLED-STATE-DESYNC wins over SE2-CONTRACT-DRIFT — both can fingerprint to the same `CONTRACT_DRIFT` root cause, but the FE2 framing ("undo unusable") is more actionable for component consumers than the generic SE2 framing.
 - Lower-priority finding is dropped; not merged. The reviewer sees one finding, with the strongest framing.
 
 ### Priority sort
@@ -174,7 +176,7 @@ Conflict resolution:
 After dedup, sort:
 1. By severity tier: Critical (priorities 1-2), Important (3-5), Suggestions (6-7).
 2. Within tier, by priority number ascending.
-3. Within same number, by persona prefix alphabetical (DA → IN → SC → SE → TS — happens to match severity weight on most schema/infra-heavy PRs).
+3. Within same number, by persona prefix alphabetical (DA → FE → IN → SC → SE → TS — happens to match severity weight on most schema/infra-heavy PRs).
 4. Within same persona, by `path` then `line`.
 
 ### 10-finding cap

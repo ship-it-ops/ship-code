@@ -20,3 +20,5 @@ Minor wording differences in the output are fine. Watch for: missing *1 findings
 | `fixture-2-migration-pr` | DA persona escalation triggered; DA1+IN1 findings on a schema migration; conditional persona activation visible in Confidence |
 | `fixture-3-stale-resolved-pr` | Comment lifecycle suppression: 3 resolved + 2 won't-fix threads. Fingerprint dedup drops 3 candidate findings silently (the three that map to resolved threads); the won't-fix threads have no matching candidates in this fixture. |
 | `fixture-4-clean-approve-pr` | Zero findings, zero open threads, green CI → APPROVE; `--auto-approve` honored on green path |
+| `fixture-5-frontend-pr` | FE persona regression anchor — derived from a real PR the skill missed before FE existed. Diff contains all 10 finding sites; expected output annotates each `# Copilot finding #N` for mechanical coverage scoring. Target: 10/10 caught. |
+| `fixture-6-frontend-clean` | FE persona false-positive guard — well-shaped React component (axe-tested, stateless, no controlled-state surface). FE activates but should produce zero findings. APPROVE. |

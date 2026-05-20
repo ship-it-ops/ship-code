@@ -48,13 +48,25 @@
     {
       "name": "ship-reviewed-prs",
       "source": "./plugins/ship-reviewed-prs",
-      "description": "Multi-persona pull-request review (senior engineer, senior security, senior infra/SRE, senior data engineer, test-coverage signal) with comment-lifecycle suppression and decisive APPROVE/REQUEST_CHANGES/COMMENT submission. Runs locally with confirmation gating and in CI fully automated. Composes with the other ship-* skills via delegation.",
-      "version": "1.0.0",
+      "description": "Multi-persona pull-request review (senior engineer, senior security, senior infra/SRE, senior data engineer, senior frontend engineer, test-coverage signal) with comment-lifecycle suppression and decisive APPROVE/REQUEST_CHANGES/COMMENT submission. Runs locally with confirmation gating and in CI fully automated. Composes with the other ship-* skills via delegation.",
+      "version": "1.1.0",
       "author": {
         "name": "ship-it-ops"
       },
       "license": "MIT",
       "keywords": ["pr-review", "code-review", "github", "security-review", "approval-workflow", "ci", "multi-persona", "code-quality"],
+      "category": "code-quality"
+    },
+    {
+      "name": "ship-secure-code",
+      "source": "./plugins/ship-secure-code",
+      "description": "Application-security review (SEC1-SEC12: auth, input validation, injection, XSS, CSRF/origin, crypto, secrets, supply chain, PII/logging, resource exhaustion, path traversal, deserialization/SSRF) for Python, TypeScript/JavaScript, and Java. Sibling to ship-clean-code; serves as the depth target when ship-reviewed-prs SC persona delegates.",
+      "version": "1.0.0",
+      "author": {
+        "name": "ship-it-ops"
+      },
+      "license": "MIT",
+      "keywords": ["security", "appsec", "owasp", "code-review", "vulnerability", "injection", "xss", "ssrf", "python", "typescript", "java", "code-quality"],
       "category": "code-quality"
     }
   ]

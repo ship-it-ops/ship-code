@@ -6,6 +6,8 @@ PR-review-specific patterns for TS/JS. For file-level idioms (type safety, async
 
 ## SC — Senior Security Engineer (TS/JS patterns)
 
+> SC owns **detection** at the PR-review level. The patterns below are the high-precision single-line shapes that fire as direct SC findings. For data-flow trace, multi-file context, framework-specific depth (Spring/Django/NestJS/etc.), or any of the SEC4-SEC12 categories in the sibling skill, emit `Run /ship-secure-code on <file>` under Delegations instead of writing a deep finding here. The detailed per-category rubric lives in `/Users/.../ship-secure-code/lang-typescript.md`.
+
 ### Auth/Authz (SC1)
 
 - **Express**: new `app.get('/...', handler)` or `router.post('/...', handler)` without an auth middleware. Look for the project's middleware: `authenticate`, `requireAuth`, `passport.authenticate`, `isAuthenticated`. Verify with `grep -B 2 "router\.\|app\." <file>`.
@@ -178,3 +180,47 @@ If ≥ 30 net added lines across `code` bucket files AND zero `test` bucket file
 If PR description matches `(fixes|closes|resolves) #\d+` AND zero `test` bucket files added or modified, fire TS2.
 
 Both findings delegate to `ship-tested-code` for depth.
+
+---
+
+## FE — Senior Frontend Engineer (TS/JS patterns)
+
+These are detection-shaped patterns — each is something a single grep / scan pass can find on a diff. The rubric depth (false-positive notes, framing) is in `reference-personas.md`.
+
+### A11Y contract (FE1)
+
+- **Dangling ARIA target**: grep for `aria-errormessage="<expr>"` or `aria-describedby="<expr>"` or `aria-labelledby="<expr>"`. For each, locate the literal id value (or the template-string id like `${rest.id ?? 'inline-edit'}-error`) and grep the same component file for `id={` matching that value. If no rendered element matches, fire FE1. Pay special attention to id values that depend on a state variable (`error`) — the rendered element must be conditional on the *same* state.
+- **Accessible-name carryover on DOM swap**: identify components that branch the return JSX based on a state variable (e.g. `if (!editing) return <button .../>` followed by a different return `<input .../>`). If the first branch has an accessible name (`aria-label`, `aria-labelledby`, visible text child) and the second branch is an `<input>`/`<textarea>` without `aria-label`/`aria-labelledby`, fire FE1.
+- **`role="img"` without label**: grep for `role="img"`. If the same element lacks `aria-label`, `aria-labelledby`, or a child element exposing an accessible name, fire FE1. Exception: SVG with `<title>` is fine.
+
+### Controlled-state desync (FE2)
+
+- **Effect resetting refs/history on every prop change**: grep for `useEffect(\([^)]*\) =>` whose body contains both a `setState` (or ref mutation) AND a `.reset()` / `.clear()` / re-initialization call, AND whose dep array includes a prop. Fire FE2.
+- **Callback emits a subset of internal state**: grep for `on[A-Z]\w+?\?\.\(` or `on[A-Z]\w+?\(` invocations inside an internal handler. If the surrounding code generates an id (`Date.now()`, `crypto.randomUUID()`, `nanoid()`, `${prefix}-${counter}`) into a local variable BUT the callback only receives a subset of that variable, fire FE2. Common shape: `const newEdge = { id: gen(), ...params }; applyCommand(...); onConnect?.(params);` — the consumer can't reconstruct the id.
+- **Internal command stores more than callback emits**: cross-check `applyCommand({ kind: '...', node: { id, position, data } })` with `onNodeAdd?.(position)` shapes — if the internal command has more fields than the outward callback, fire FE2 on the callback site.
+
+### Command-history incomplete (FE3)
+
+- **Bypassing dispatch**: grep for two paths to the same state mutation. Heuristic: locate every `set<Capitalized>(`/`baseOn<Capitalized>Change(` call and every `applyCommand(`/`dispatch(` call in the same file. If a keyboard/imperative handler (`useKeyboard`, `onKeyDown`, `useGraphEditorKeyboard`, etc.) calls the raw setter while click/menu/drag handlers go through dispatch, fire FE3.
+- **Overlapping command entries**: identify command actions whose inverse already covers a related entity. Specifically: `delete-node` whose inverse restores incident edges, paired with a separate `delete-edge` for those same edges in the same user action (search for two consecutive `applyCommand(... 'delete-node' ...)` and `applyCommand(... 'delete-edge' ...)` in the same handler). Fire FE3.
+
+### No-op prop value (FE4)
+
+- For each TypeScript prop typed as a union of string literals (`'a' \| 'b' \| 'c'`), grep the same file for `=== '<variant>'`, `case '<variant>':`, or destructured branching on the variant. If a variant has no matching branch, fire FE4. Tolerate variants annotated `/** @experimental */` or `/** @deprecated */` on the type declaration.
+
+### SSR / global-CSS (FE5)
+
+- **Global CSS import in non-entry module**: grep for `^import ['"]\..*\.css['"]` or `^import ['"][^./].*\.css['"]` in any file whose path is not `layout.tsx`, `_app.tsx`, `page.tsx`, `main.tsx`, `index.tsx`, or `root.tsx`. Fire FE5. Exception: CSS Modules (`.module.css`) are not global; do not fire.
+- **`window`/`document` at module top-level without `'use client'`**: grep for `^const \w+ = window\.` or `^window\.` or `^document\.` at module-top level. If the file doesn't open with `'use client'` and the project is Next.js App Router (heuristic: `app/` directory + `next.config.*`), fire FE5.
+
+### Range clamp missing (FE6)
+
+- For each function/method that returns or passes a `{ x, y, width, height }`-shaped object (or `{ left, top, right, bottom }`, `{ start, end }`) to a consumer documented to accept normalized 0..1 fractions, check whether the producer applies `Math.max(0, Math.min(1, x))` (or a `clamp01` helper) to each field. Common consumers: `Minimap`, `GraphMinimap`, `Slider`, `Progress`, normalized scroll, normalized viewport rects. If neither producer nor consumer clamps, fire FE6.
+
+### Changeset drift (FE7)
+
+- For each `.changeset/*.md` file in the diff, parse the body. Phrases that indicate "scope smaller than diff": `lands in next iteration`, `follow-up PR`, `to be added`, `not yet implemented`, `coming soon`, `placeholder for`. Cross-check against the diff — if any of the named behaviors are present in the diff, fire FE7. Phrases that indicate "scope larger than diff": describe behaviors not detectable in the diff. Optional secondary check.
+
+### Redundant internal import (FE8)
+
+- For each `import` line inside `packages/<pkg>/src/`, check if the import specifier starts with the package's own published name (read `packages/<pkg>/package.json` `name` field). If yes, fire FE8 — a package should not self-import its own published path. Common offender: `import '@scope/pkg/styles.css'` from inside `packages/pkg/src/`.

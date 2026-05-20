@@ -56,6 +56,12 @@ For repos that have no IaC and no operational concerns (rare — usually IN-ligh
 disable: [IN-deep]
 ```
 
+For repos that are pure backend / non-React (FE will not have any TSX/JSX to scan, so the cost is small either way, but you can suppress the trigger probe):
+
+```
+disable: [FE]
+```
+
 ### Custom conditional triggers
 
 Add to the file-pattern lists that activate DA or IN-deep:
@@ -70,6 +76,20 @@ in_deep_trigger_paths:
   - "deploy/"
   - "infra-terraform/"
   - "platform-cdk/"
+
+fe_trigger_paths:
+  - "packages/ui/src/"
+  - "packages/graph-editor/src/"
+  - "apps/web/app/"
+  - "apps/web/components/"
+
+fe_min_jsx_lines: 50    # skip FE if the JSX-shaped diff is below this line count
+```
+
+To disable FE entirely (e.g., on a non-React monorepo):
+
+```
+disable: [FE]
 ```
 
 ### Severity adjustments
