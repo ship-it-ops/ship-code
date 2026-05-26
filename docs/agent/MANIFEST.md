@@ -1,5 +1,5 @@
 # Agent Context
-Last updated: 2026-05-25 | Total notes: 8
+Last updated: 2026-05-26 | Total notes: 9
 
 <!--
   This file is the index for `docs/agent/`. Agents read it at session start.
@@ -22,6 +22,7 @@ Last updated: 2026-05-25 | Total notes: 8
 - [bare-slash-command-unknown-in-action](scars/bare-slash-command-unknown-in-action.md) | scar | active | core | 2026-05-25 | Headless SDK needs /plugin:command form not bare
 - [oauth-token-whitespace-silent-fail](scars/oauth-token-whitespace-silent-fail.md) | scar | active | standard | 2026-05-25 | Whitespace in OAuth secret kills run silently
 - [hidden-output-blocks-debugging](scars/hidden-output-blocks-debugging.md) | scar | active | core | 2026-05-25 | show_full_output false hides Unknown-command and auth diagnostics
+- [marketplace-local-path-needs-leading-slash](scars/marketplace-local-path-needs-leading-slash.md) | scar | active | core | 2026-05-26 | `plugin_marketplaces: '.'` rejected; needs `./` prefix
 
 ## Open Questions
 - [v2-release-trigger](open-questions/v2-release-trigger.md) | open-question | active | standard | 2026-05-25 | When do we cut ship-reviewed-prs v2.0.0 release

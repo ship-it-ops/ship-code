@@ -97,7 +97,7 @@ jobs:
           # Install from the local checkout (PR merge ref) rather than the
           # marketplace URL. PRs that touch the plugin self-review with their
           # own changes; see header comment for the trust-model tradeoff.
-          plugin_marketplaces: '.'
+          plugin_marketplaces: './'
           plugins: 'ship-reviewed-prs@ship-code'
           # Default exit behavior: REQUEST_CHANGES exits 1 (fails the job),
           # APPROVE and COMMENT exit 0. Add `--strict` if you want COMMENT
