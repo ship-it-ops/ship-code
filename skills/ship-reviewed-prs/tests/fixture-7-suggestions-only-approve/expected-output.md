@@ -21,7 +21,7 @@ is rendered as plain prose, not a markdown hyperlink. CI's relative-link checker
 validated if the file is renamed or moved.
 
 ```suggestion
-See [review-pr.md](plugins/ship-reviewed-prs/commands/review-pr.md) for the matching command.
+See `plugins/ship-reviewed-prs/commands/review-pr.md` for the matching command.
 ```
 
 (Adjust the surrounding prose if your line doesn't end in a period — the fence

@@ -264,7 +264,7 @@ gh api -X POST "repos/<owner>/<repo>/pulls/<n>/reviews/${REVIEW_ID}/comments" \
 
 ### Step 2a: Embed a `suggestion` fence (when the fix qualifies)
 
-When the fix is a small, self-contained, mechanical edit and the comment's line range exactly matches the lines being replaced, embed the replacement in a GitHub `suggestion` fence so the author can hit "Commit suggestion" instead of editing by hand. See SKILL.md "Suggested-change Blocks" for the qualify / disqualify rules.
+When the fix is a small, self-contained, mechanical edit and the comment's line range exactly matches the lines being replaced, embed the replacement in a GitHub `suggestion` fence so the author can hit "Commit suggestion" instead of editing by hand. Qualify / disqualify rules are in the checklist below; the alignment requirement at the end of this subsection is the hard constraint.
 
 **Worked example — IN1-PROD-OUTAGE-RISK on `services/billing.ts:5`.** The diff line is:
 

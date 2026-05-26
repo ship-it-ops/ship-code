@@ -253,29 +253,7 @@ Full `gh` command reference in `reference.md`.
 
 ## Suggested-change Blocks
 
-When an inline comment carries a fix that is small, self-contained, and mechanical, embed it in a GitHub `suggestion` fence so the author can hit "Commit suggestion" instead of editing by hand:
-
-````
-```suggestion
-<replacement text — replaces exactly the lines covered by this comment's line range>
-```
-````
-
-**Use a suggestion block when ALL of these hold (qualify):**
-- The fix is a single, contiguous edit confined to the comment's line range — add a timeout arg, swap `var` → `const`, replace `console.log` with the structured logger on one line, fix a typo, add a missing `await`, add a missing `requireAuth` middleware on a route declaration.
-- The replacement is syntactically valid in the file's language and does not require any other edit elsewhere (e.g., a new import) to compile or run.
-- The comment's `line` (and `start_line` for multi-line ranges) exactly matches the lines being replaced.
-- You are confident the replacement is correct. A wrong suggestion that gets one-click-applied is worse than no suggestion.
-
-**Do NOT use a suggestion block when (disqualify — keep as prose):**
-- The fix needs a new import or any adjacent edit the suggestion fence can't cover.
-- The fix spans multiple non-contiguous regions or files.
-- The fix is architectural ("extract this", "restructure this module") rather than a concrete textual edit.
-- You're uncertain whether the replacement compiles, type-checks, or preserves behavior.
-
-**Alignment rule:** if a comment contains a suggestion block, its `line`/`start_line` range MUST equal the lines being replaced. Mismatched ranges render misleadingly and cannot be one-click-applied.
-
-A worked example (inline comment body containing a `suggestion` fence + the `gh` call that posts it) lives in `reference.md` Section 6.
+When an inline finding carries a small, self-contained, mechanical fix, embed it in a GitHub `suggestion` fence so the author can hit "Commit suggestion" instead of editing by hand. Qualify/disqualify rules, the alignment requirement, and a worked `gh` example live in `reference.md` §6.2a.
 
 ## Local Submission Gate
 
