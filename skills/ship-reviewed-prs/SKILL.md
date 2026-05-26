@@ -23,7 +23,7 @@ This skill performs a structured, multi-persona pull-request review that catches
 Start with these 3 rules and internalize them before learning the rest:
 1. **Read the PR description and the existing review threads BEFORE forming new findings** — the most expensive review is one that re-raises a concern already discussed.
 2. **Personas have distinct rubrics, but findings deduplicate** — one finding per `(file, line, root cause)`, owned by the highest-priority persona.
-3. **The decision is mechanical** — APPROVE / REQUEST_CHANGES / COMMENT follows from the merged finding list and CI status. The skill writes prose; the verdict is computed.
+3. **The decision is mechanical** — APPROVE / REQUEST_CHANGES / COMMENT follows from the merged finding list and CI status. The skill writes prose; the verdict is computed. Suggestions (P6/P7) and pending CI become advisory notes inside the APPROVE body rather than verdict downgrades.
 
 The detailed reference files (`reference.md`, `reference-personas.md`, `reference-lifecycle.md`) assume familiarity with `gh` CLI, GitHub's review-thread model, and the sibling skills.
 
@@ -37,7 +37,7 @@ The detailed reference files (`reference.md`, `reference-personas.md`, `referenc
 
 | Flag | Effect |
 |------|--------|
-| `--auto-approve` | Local only: auto-submit on clean APPROVE (green CI, zero open threads, no findings). Never honored for REQUEST_CHANGES or COMMENT. Ignored in CI. |
+| `--auto-approve` | Local only: auto-submit on **clean** APPROVE (green CI, zero open threads, zero findings of any tier — including suggestions). Suggestion findings, delegations, or pending CI block auto-submit and require interactive confirm; APPROVE-with-caveats is still APPROVE but the human should glance at the caveats before submitting. Never honored for REQUEST_CHANGES or COMMENT. Ignored in CI. |
 | `--non-interactive` | Force CI mode behavior locally (skip confirmation gate). Required if CI auto-detection fails. |
 | `--json` | Change the local terminal output format to machine-readable JSON instead of formatted prose. Does NOT bypass the local confirmation gate — submission still requires `yes`/`--auto-approve` per the rules below. In CI mode it changes the stdout format only (submission happens regardless). |
 | `--strict` | CI only: exit code `1` for COMMENT decisions as well as REQUEST_CHANGES. Default is `1` only for REQUEST_CHANGES. |
@@ -74,8 +74,8 @@ Before emitting any finding, fingerprint it `(file, line ± 5, root-cause-token)
 ### 5. The decision is deterministic.
 APPROVE / REQUEST_CHANGES / COMMENT is computed by table lookup on the merged finding list + CI status + open-thread count. The skill explains the decision in prose but does not negotiate it.
 
-### 6. CI failing blocks APPROVE.
-Never approve over red CI. The decision degrades to COMMENT with a "CI must pass before approval" note.
+### 6. CI failing blocks APPROVE; pending CI is noted, not blocking.
+Never approve over red CI — the decision degrades to COMMENT with a "CI must pass before approval" note. Pending CI (checks still running) does NOT block APPROVE; instead the review body adds a "Recommend awaiting CI completion before merge" caveat so the human reviewer has the signal without losing the verdict.
 
 ### 7. "Possibly addressed" needs human confirmation.
 A later commit touching the same file:line as an open comment is a heuristic, not a fact. Surface the signal, do not assume resolution. APPROVE is degraded to COMMENT until a human confirms.
@@ -163,17 +163,19 @@ Full finding-ID definitions and examples in `reference-personas.md`.
 
 ## Decision Matrix
 
-Computed deterministically from the merged finding list. No LLM judgment.
+Computed deterministically from the merged finding list. No LLM judgment. Evaluated top-down — the first matching row wins:
 
 | State | Decision |
 |-------|----------|
-| Any unsuppressed *1 finding (SC1/IN1/DA1/SE1/TS1) | `REQUEST_CHANGES` |
-| Any unsuppressed *2 finding | `REQUEST_CHANGES` |
-| Only *3-*5 findings | `COMMENT` |
-| Only *6-*7 findings or only Delegations | `COMMENT` |
-| Zero new findings AND zero OPEN threads AND CI green | `APPROVE` |
-| CI failing | `COMMENT` (never APPROVE over red CI) |
-| Any "Possibly addressed" items | `COMMENT` (manual confirmation required to escalate) |
+| `is_draft` or WIP-labelled | `COMMENT` |
+| Any unsuppressed *1-*2 finding (Critical) | `REQUEST_CHANGES` |
+| Any unsuppressed *3-*5 finding (Important) | `COMMENT` |
+| CI failing (`ci_state == red`) | `COMMENT` — "CI must pass before approval" |
+| `lifecycle_quality == degraded` (pagination incomplete) | `COMMENT` — suppression unreliable |
+| Any "Possibly addressed" items | `COMMENT` — needs human confirmation |
+| Otherwise (incl. only suggestions, delegations, and/or pending CI) | `APPROVE` — caveats noted inline |
+
+APPROVE may carry optional "Suggestions", "Delegations", or "Awaiting CI" caveats in the review body; these are advisory and do not change the verdict. APPROVE never accompanies an Important or Critical finding.
 
 ## Comment Lifecycle
 

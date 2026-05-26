@@ -36,7 +36,7 @@ Plain unified diff. Pipe to a length-cap (e.g., `head -c 200000`) for very large
 gh pr checks <n>
 ```
 
-Returns each check with status (`pass`, `fail`, `pending`, `skipping`). Decision matrix uses overall pass/fail; details only flagged for IN5 CI-PIPELINE findings on a failing job.
+Returns each check with status (`pass`, `fail`, `pending`, `skipping`). Decision matrix uses overall pass/fail/pending; details only flagged for IN5 CI-PIPELINE findings on a failing job. `pending` checks are listed by name in the APPROVE body's "Awaiting CI" caveat — checks irrelevant to the diff (e.g. CodeQL language jobs on a markdown-only PR) may still be flagged; the human reviewer is the arbiter of what to wait for.
 
 ### Review threads (GraphQL — only way to get `isResolved`/`isOutdated`)
 
@@ -200,18 +200,27 @@ The decision is a function of:
 - `ci_state` (`green`, `red`, `pending`)
 - `is_draft` (PR is in draft state or WIP-labelled)
 
+Evaluated top-down — the first matching row wins:
+
 | Condition | Decision |
 |-----------|----------|
 | `is_draft` | `COMMENT` |
-| `critical_count > 0` | `REQUEST_CHANGES` |
-| `important_count == 0 && suggestion_count == 0 && delegation_count == 0 && open_thread_count == 0 && possibly_addressed_count == 0 && ci_state == green` | `APPROVE` |
+| `critical_count > 0` (priority 1-2) | `REQUEST_CHANGES` |
+| `important_count > 0` (priority 3-5) | `COMMENT` (advisory) — never `APPROVE` |
 | `ci_state == red` | `COMMENT` (with "CI must pass before approval" note) |
-| `ci_state == pending` | `COMMENT` (with "Re-run when CI completes" note) |
+| `lifecycle_quality == degraded` | `COMMENT` (suppression unreliable; cannot guarantee correctness) |
 | `possibly_addressed_count > 0` | `COMMENT` (with "Confirm addressed items to escalate" note) |
-| `important_count > 0` | `COMMENT` (advisory) — but never `APPROVE` |
-| Otherwise (suggestions or delegations only) | `COMMENT` |
+| Otherwise (any combination of `suggestion_count`, `delegation_count`, `open_thread_count`, and `ci_state == pending`) | `APPROVE` — caveats noted inline |
 
-The matrix is intentionally conservative on `APPROVE`. A clean PR with no findings, no open threads, and green CI is the ONLY path to approval. Everything else is at most COMMENT.
+The "Otherwise" APPROVE may attach any of three optional caveat sections to the review body, in this order:
+
+1. **"Suggestions (improve when convenient)"** — emitted when `suggestion_count > 0`. Lists each P6/P7 finding with its persona prefix, file:line, and one-sentence rationale. Identical formatting to the COMMENT-decision suggestions block.
+2. **"Delegations"** — emitted when `delegation_count > 0`. Same format as today's Delegations section (advisory pointers to sibling skills).
+3. **"Awaiting CI"** — emitted when `ci_state == pending`. Phrase as: *"Recommend awaiting CI completion before merge — N check(s) still running: `<comma-separated check names>`. APPROVE stands; this is advisory."*
+
+These caveats are body content, not verdict modifiers. They do not change the submitted `event` (always `APPROVE`). The bot disclosure prefix from Principle 11 is still emitted.
+
+APPROVE is the default when nothing important is wrong. Critical findings deny; Important findings comment; suggestions, delegations, and pending CI annotate without blocking. This avoids the "always-one-nitpick" trap where any sufficiently thorough reviewer prevents APPROVE indefinitely.
 
 ---
 
