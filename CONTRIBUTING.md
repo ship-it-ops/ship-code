@@ -100,6 +100,32 @@ After creating the plugin, add an entry to:
 
 Plugin version MUST match between `plugins/<name>/.claude-plugin/plugin.json` and the corresponding `marketplace.json` entry. CI verifies this.
 
+### Slash Commands (optional)
+
+A skill is only auto-invocable if its `SKILL.md` description matches what the user is asking. If you want users to be able to invoke the skill explicitly with `/<name>` (or run it from a non-interactive CI job that types the literal `/<name>` as its prompt), you also need a slash command file:
+
+```text
+plugins/<skill-name>/
+├── .claude-plugin/plugin.json
+├── commands/
+│   └── <skill-name>.md         # The slash command — body is the prompt
+└── skills/<skill-name>/...     # The skill (as documented above)
+```
+
+The command body should delegate to the skill rather than reimplement it:
+
+```markdown
+---
+description: One-line summary shown in the slash-command picker.
+argument-hint: "<arg-1> [flags]"
+allowed-tools: Skill, Bash, Read, Grep, Glob
+---
+
+Run the `<skill-name>` skill with arguments: $ARGUMENTS
+```
+
+Important: `allowed-tools` on the *command* is the binding constraint at runtime — the skill's own `allowed-tools` does not expand it. If the skill needs `Task` (subagents) or shell beyond `gh`/`git`, the command must declare them too. Skills marked `disable-model-invocation: true` are reachable *only* via a slash command, so the `commands/` file is mandatory for those.
+
 ## Validation
 
 CI runs six jobs on every PR (`.github/workflows/validate-skills.yml`):
