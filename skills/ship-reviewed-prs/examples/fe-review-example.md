@@ -33,14 +33,14 @@ This example is derived from a real-world miss the skill had on a graph-editor P
 ```
 ## PR Review: #47 — Add support for graph editing
 
-### Decision: REQUEST_CHANGES
+### Decision: 🛑 REQUEST_CHANGES
 
 ### Confidence
 Reviewed 56 files (compressed: 8 representative TSX, 1 changeset, 1 lockfile, plus passing-context files). Conditional FE persona activated (TSX-heavy diff with new aria-* attributes and a new `import './styles.css'` in a non-entry module). Conditional DA persona did not activate (no schema files). IN deep mode did not activate (no infra files). SC scanned the diff; flagged one SC3 on the committed lockfile. CI is green. Zero existing review threads. The decision is REQUEST_CHANGES because the FE persona produced three *1-tier findings — an ARIA contract break and two state-management bugs that make undo/redo unusable in the controlled-elements pattern the docs themselves demonstrate.
 
 Generated/vendored skipped: 1 (`pnpm-lock.yaml`).
 
-### Critical (must fix before merge)
+### 🛑 Critical (must fix before merge)
 
 - **[FE1-A11Y-CONTRACT-BROKEN] packages/ui/src/components/InlineEdit/InlineEdit.tsx:234**: `aria-errormessage` references `${id}-error`, but no element with that id is rendered in the component tree. The string returned by `validate()` lives only in `error` state — sighted users see the red border, AT users get a dangling ARIA reference. → Render the error adjacent to the input: `{error && <p id={`${id}-error`} role="alert" className="text-err mt-1 text-[11px]">{error}</p>}` and wrap the `<input>` + `<p>` in a fragment.
 
@@ -52,7 +52,7 @@ Generated/vendored skipped: 1 (`pnpm-lock.yaml`).
 
 - **[FE3-COMMAND-HISTORY-INCOMPLETE] packages/graph-editor/src/GraphEditorCanvas.tsx:397**: When Delete is pressed with both nodes and edges selected, `deleteSelectedNodes()` records a `delete-node` command (whose inverse restores incident edges) AND `deleteSelectedEdges()` records a separate `delete-edge` for each selected edge. If a selected edge is incident to a selected node, undo re-adds it twice — duplicate edges in the graph. → Before pushing `delete-edge` commands, subtract edges already covered by a `delete-node` in this batch.
 
-### Important (should fix)
+### ⚠️ Important (should fix)
 
 - **[FE5-SSR-GLOBAL-CSS] packages/graph-editor/src/GraphEditorCanvas.tsx:34**: Global CSS imported (`import './styles.css'`) inside a non-entry component module. Next.js App Router only permits global CSS imports from `layout.tsx`/`_app.tsx`; consumers on App Router will hit a build error. The package already exports `@ship-it-ui/graph-editor/styles.css` for consumer-side import. → Drop the internal import; document that consumers must import the stylesheet once from their entry module.
 

@@ -182,7 +182,7 @@ The 14 suppressed = 1 (Thread 1 match) + 1 (Thread 4 match) + 12 (Threads 7-22 m
 Matrix: any unsuppressed *1 finding → REQUEST_CHANGES.
 
 ```
-### Decision: REQUEST_CHANGES
+### Decision: 🛑 REQUEST_CHANGES
 
 ### Confidence
 Reviewed a long-lived PR with 23 existing threads and 47 commits. Aggressive lifecycle suppression applied — 14 candidate findings were dropped as duplicates of existing threads. The one critical finding (SC1-AUTH-MISSING on api/admin/billing.ts) matches Thread 23 from Grace; the same concern is the actual blocker. Confirming addressed items (Thread 5) and engaging with stale Thread 6 would clear the path; the SC1 fix is the critical action.

@@ -7,12 +7,12 @@ The skill should produce a report substantially matching the structure below. Th
 ```
 ## PR Review: #5012 — Add tier-upgrade endpoint
 
-### Decision: REQUEST_CHANGES
+### Decision: 🛑 REQUEST_CHANGES
 
 ### Confidence
 Reviewed 1 file (api/users.ts). No conditional personas activated (no schema, no infra files). No existing review threads. CI is green. The critical security finding is unambiguous: a new state-changing endpoint added without auth.
 
-### Critical (must fix before merge)
+### 🛑 Critical (must fix before merge)
 
 - **[SC1-AUTH-MISSING] api/users.ts:14**: New `POST /api/users/:id/upgrade-tier` has no auth middleware. Compare to the adjacent `GET /api/users/:id` on line 10, which uses `requireAuth`. The POST endpoint allows any unauthenticated request to change any user's tier. → Add `requireAuth` (and likely `requireAdmin` given the description says "so admins can change user tiers"). Verify: `curl -X POST localhost:3000/api/users/123/upgrade-tier -d '{"tier":"premium"}'` should return 401.
 

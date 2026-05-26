@@ -8,7 +8,7 @@ ask the author/oncall for human judgment on disputed findings.
 
 ## PR Review: #2201 — docs(readme): clarify deploy step ordering
 
-### Decision: APPROVE
+### Decision: ✅ APPROVE
 
 ### Confidence
 Reviewed README.md (+2 lines, -2 lines) as a docs-only re-ordering of two deploy steps. SC scanned for secret/URL leakage — clean. SE confirmed the new ordering is technically correct: `PLATFORM_CONFIG_DIR` must be set before `helm install` reads it. IN/DA/FE/TS did not activate. No findings. CI partially pending — Validate Skills jobs green, CodeQL language-analysis jobs still running (irrelevant to a markdown diff). Per the updated matrix, pending CI is noted as a caveat rather than blocking APPROVE.

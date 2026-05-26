@@ -3,12 +3,12 @@
 ```
 ## PR Review: #5013 — Drop legacy_external_id from users table
 
-### Decision: REQUEST_CHANGES
+### Decision: 🛑 REQUEST_CHANGES
 
 ### Confidence
 Reviewed 2 files (1 schema migration, 1 ORM model). DA persona activated (schema migration detected) and escalated to subagent for adjacent-context discovery. The subagent found 2 downstream consumers of the dropped column. CI green. No existing review threads. The DA1 finding is the blocker — this is a one-way schema change with active downstream readers.
 
-### Critical (must fix before merge)
+### 🛑 Critical (must fix before merge)
 
 - **[DA1-SCHEMA-BREAK] migrations/0042_drop_legacy_id.sql:1**: Dropping `users.legacy_external_id` will break two downstream consumers:
   - `analytics-etl/dbt/models/users_dim.sql:14` (references the column as `source_system_id`)
