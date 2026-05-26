@@ -11,7 +11,7 @@ ask the author/oncall for human judgment on disputed findings.
 ### Decision: APPROVE
 
 ### Confidence
-Reviewed CONTRIBUTING.md (+28 lines, 0 deletions) as a pure docs-only PR. SC ran a full pass for secret/URL leakage — clean. SE ran a technical-accuracy pass against the rest of the contributing guide. IN/DA/FE/TS did not activate. One P6 suggestion found. CI green. APPROVE with a Suggestions caveat — the finding is advisory and does not block the verdict per the v2.0.0 decision matrix.
+Reviewed CONTRIBUTING.md (+28 lines, 0 deletions) as a pure docs-only PR. SC ran a full pass for secret/URL leakage — clean. SE ran a technical-accuracy pass against the rest of the contributing guide. IN/DA/FE/TS did not activate. One P6 suggestion found. CI green. APPROVE with a Suggestions caveat — the finding is advisory and does not block the verdict per the updated decision matrix.
 
 ### Critical (must fix before merge)
 
@@ -54,7 +54,7 @@ gh api -X POST .../reviews/$REVIEW_ID/events
 
 ## What this fixture demonstrates
 
-1. **Suggestions do not block APPROVE** — the v2.0.0 matrix treats P6/P7 as advisory caveats inside the APPROVE body rather than verdict downgrades.
+1. **Suggestions do not block APPROVE** — the updated matrix treats P6/P7 as advisory caveats inside the APPROVE body rather than verdict downgrades.
 2. **"Suggestions (improve when convenient)" caveat is populated** when `suggestion_count > 0`, listing each finding with the same format as a COMMENT-decision suggestion.
 3. **"Awaiting CI" caveat is absent** because CI is green; caveat sections are only emitted when their condition holds.
 4. **APPROVE with inline findings uses the pending-review protocol** — not the simpler `gh pr review --approve --body` form (that's reserved for inline-less APPROVEs per reference.md §6).

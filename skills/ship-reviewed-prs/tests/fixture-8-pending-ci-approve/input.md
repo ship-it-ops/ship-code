@@ -1,6 +1,6 @@
 # Synthetic PR Input for Fixture 8: Pending-CI APPROVE
 
-You are reviewing a clean docs PR with no findings, but CI is still in progress — some checks have passed, others are pending (e.g. language-analysis jobs that don't apply to a markdown-only diff). Under the relaxed decision matrix (v2.0.0+), pending CI is noted as an advisory "Awaiting CI" caveat inside the APPROVE body rather than downgrading the verdict to COMMENT.
+You are reviewing a clean docs PR with no findings, but CI is still in progress — some checks have passed, others are pending (e.g. language-analysis jobs that don't apply to a markdown-only diff). Under the relaxed decision matrix, pending CI is noted as an advisory "Awaiting CI" caveat inside the APPROVE body rather than downgrading the verdict to COMMENT.
 
 ## PR metadata
 
@@ -72,6 +72,6 @@ The user invoked the skill in CI mode (`CI=true`). No flags.
 Run the multi-persona PR review. Expected outcome:
 
 - Zero findings of any tier. CI not failing; some checks pending. No "Possibly addressed" items. No draft state.
-- Per the v2.0.0 decision matrix, the verdict is **APPROVE** with an "Awaiting CI" caveat listing the three pending CodeQL checks.
+- Per the updated decision matrix, the verdict is **APPROVE** with an "Awaiting CI" caveat listing the three pending CodeQL checks.
 - The "Suggestions" caveat is **absent** (no P6/P7 findings).
 - In CI mode, the bot disclosure prefix appears before the body. Submission uses the simpler `gh pr review --approve --body` form because the finding list has zero inline comments.

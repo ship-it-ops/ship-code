@@ -1,6 +1,6 @@
 # Synthetic PR Input for Fixture 7: Suggestions-Only APPROVE
 
-You are reviewing a small docs PR that contains exactly one cosmetic concern — a path reference written as inline prose rather than a markdown hyperlink. Under the relaxed decision matrix (v2.0.0+), suggestion-only findings produce APPROVE with a "Suggestions" caveat, not COMMENT.
+You are reviewing a small docs PR that contains exactly one cosmetic concern — a path reference written as inline prose rather than a markdown hyperlink. Under the relaxed decision matrix, suggestion-only findings produce APPROVE with a "Suggestions" caveat, not COMMENT.
 
 ## PR metadata
 

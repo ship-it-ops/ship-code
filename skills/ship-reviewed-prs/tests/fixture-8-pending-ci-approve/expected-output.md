@@ -11,7 +11,7 @@ ask the author/oncall for human judgment on disputed findings.
 ### Decision: APPROVE
 
 ### Confidence
-Reviewed README.md (+2 lines, -2 lines) as a docs-only re-ordering of two deploy steps. SC scanned for secret/URL leakage — clean. SE confirmed the new ordering is technically correct: `PLATFORM_CONFIG_DIR` must be set before `helm install` reads it. IN/DA/FE/TS did not activate. No findings. CI partially pending — Validate Skills jobs green, CodeQL language-analysis jobs still running (irrelevant to a markdown diff). Per the v2.0.0 matrix, pending CI is noted as a caveat rather than blocking APPROVE.
+Reviewed README.md (+2 lines, -2 lines) as a docs-only re-ordering of two deploy steps. SC scanned for secret/URL leakage — clean. SE confirmed the new ordering is technically correct: `PLATFORM_CONFIG_DIR` must be set before `helm install` reads it. IN/DA/FE/TS did not activate. No findings. CI partially pending — Validate Skills jobs green, CodeQL language-analysis jobs still running (irrelevant to a markdown diff). Per the updated matrix, pending CI is noted as a caveat rather than blocking APPROVE.
 
 ### Critical (must fix before merge)
 
@@ -56,7 +56,7 @@ gh pr review 2201 --approve --body "<summary with disclosure prefix and Awaiting
 
 ## What this fixture demonstrates
 
-1. **Pending CI does not block APPROVE** — the v2.0.0 matrix surfaces it as an "Awaiting CI" caveat rather than degrading to COMMENT.
+1. **Pending CI does not block APPROVE** — the updated matrix surfaces it as an "Awaiting CI" caveat rather than degrading to COMMENT.
 2. **"Awaiting CI" caveat lists pending check names by name** — even checks that are likely irrelevant to the diff (CodeQL on markdown). The skill defers to the human reviewer to decide what to wait for.
 3. **"Suggestions" caveat is absent** because `suggestion_count == 0`; caveat sections are conditional on their predicate.
 4. **APPROVE without inline findings uses the simpler `gh pr review --approve --body` form** (reference.md §6 exception).
