@@ -102,7 +102,15 @@ jobs:
           # Default exit behavior: REQUEST_CHANGES exits 1 (fails the job),
           # APPROVE and COMMENT exit 0. Add `--strict` if you want COMMENT
           # to also fail.
-          prompt: '/ship-reviewed-prs:review-pr ${{ github.event.pull_request.number }}'
+          # `--non-interactive` is mandatory here. The skill auto-detects CI via
+          # `CI=true` env var, but the Claude Code SDK that runs inside this
+          # action does not reliably propagate that into the model's context —
+          # in practice the skill sometimes falls into local mode and calls
+          # `AskUserQuestion` to gate submission, which the headless harness
+          # denies, so the computed review never posts. Passing the flag forces
+          # CI-mode behavior regardless of detection. See
+          # docs/agent/scars/ci-mode-auto-detect-unreliable.md.
+          prompt: '/ship-reviewed-prs:review-pr ${{ github.event.pull_request.number }} --non-interactive'
           # Temporarily on while we debug why the SDK exits with num_turns=0.
           # Revisit and remove once the dogfood loop is producing reviews
           # reliably — full output exposes the prompt body and any tool calls,

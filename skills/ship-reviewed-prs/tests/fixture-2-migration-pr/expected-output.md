@@ -1,5 +1,7 @@
 # Expected Review Output — fixture-2-migration-pr
 
+> **Format note (v1.2+):** Under the inline-first protocol the three Critical findings below should be posted as **three inline review comments** on `migrations/0042_drop_legacy_id.sql:1` (the migration script is one logical anchor; co-locating all three findings keeps the diff context coherent). None qualifies for a `suggestion` fence — each fix requires coordination with downstream consumers or a multi-step deploy sequence. The summary body that ships in the review-body step should reduce each Critical bullet to `[DA1-SCHEMA-BREAK] migrations/0042_drop_legacy_id.sql:1 — see inline comment` and so on. The full finding text below is what should appear in the inline-comment bodies.
+
 ```
 ## PR Review: #5013 — Drop legacy_external_id from users table
 

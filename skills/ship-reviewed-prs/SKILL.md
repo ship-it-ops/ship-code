@@ -225,6 +225,10 @@ The skill runs as a hybrid: always-on personas in-context, conditional personas 
 
 ## Submission Protocol
 
+Every Critical and Important finding that has a concrete `file:line` target **MUST** be posted as an inline review comment via the pending-review protocol below. Posting all findings as a single summary blob is a regression — the developer cannot see feedback in the diff and cannot accept fixes with one click. A finding without a precise line (architectural concern, cross-file pattern) lives in the summary body only. Suggestion-tier (P6/P7) findings post inline **when** they include a mechanical fix; otherwise they appear in the summary body.
+
+The summary body is an **index, not a duplicate**. It carries Decision, Confidence, Comment Lifecycle, What's Good, and a one-line bullet per inline finding (`[SC1-AUTH-MISSING] api/users.ts:42 — see inline comment`). It does NOT repeat the full inline body.
+
 Use the GitHub pending-review protocol so inline comments and the summary post atomically:
 
 ```bash
@@ -243,9 +247,13 @@ gh api -X POST repos/{owner}/{repo}/pulls/<n>/reviews/$REVIEW_ID/events \
   -f event=APPROVE|REQUEST_CHANGES|COMMENT -f body=<summary>
 ```
 
-For APPROVE with no inline findings, the simpler `gh pr review <n> --approve --body <summary>` is acceptable.
+The simpler `gh pr review <n> --approve --body <summary>` form is allowed **only** when the decision is APPROVE AND the inline-comment count is exactly zero (clean APPROVE with nothing to anchor). REQUEST_CHANGES, COMMENT, and any APPROVE with at least one inline finding must use the three-step pending-review protocol above.
 
 Full `gh` command reference in `reference.md`.
+
+## Suggested-change Blocks
+
+When an inline finding carries a small, self-contained, mechanical fix, embed it in a GitHub `suggestion` fence so the author can hit "Commit suggestion" instead of editing by hand. Qualify/disqualify rules, the alignment requirement, and a worked `gh` example live in `reference.md` §6.2a.
 
 ## Local Submission Gate
 
@@ -300,6 +308,39 @@ A drop-in GitHub Actions workflow and GitLab CI snippet ship in `examples/ci-git
 
 ## Review Output Format
 
+The output is split into two surfaces: a list of **inline comments** (anchored at `file:line`, posted via the pending-review protocol) and a single **summary body** (a scannable index, posted as the review body). The two are submitted as one atomic review.
+
+### Inline comments to post
+
+Render one block per inline comment, in priority order. Each block names the persona/finding ID, the file and line range, whether a `suggestion` fence is included, and the body that gets posted.
+
+```
+--- inline comment 1 ---
+[IN1-PROD-OUTAGE-RISK]  services/billing.ts:5
+suggestion: yes
+
+**[IN1-PROD-OUTAGE-RISK]** `fetch("https://billing.internal/users/...")` has
+no timeout. A slow billing-internal will hang this function indefinitely,
+blocking the calling request and exhausting connection-pool capacity.
+
+```suggestion
+  const user = await fetch(`https://billing.internal/users/${userId}`, { signal: AbortSignal.timeout(5000) }).then(r => r.json());
+```
+
+--- inline comment 2 ---
+[IN2-OBSERVABILITY-GAP]  api/admin.ts:42
+suggestion: no  (needs new import + new metric — keep as prose)
+
+**[IN2-OBSERVABILITY-GAP]** New admin endpoint has no audit log and no metric.
+Admin actions that change user state always warrant audit logging. Add
+`logger.info("admin.tier_changed", { actor_id, target_user_id, new_tier })`
+and increment a counter `admin.actions.tier_change`. The logger and counter
+both need imports from `lib/observability.ts`, so this isn't a one-line
+suggestion.
+```
+
+### Summary body (posted as review body)
+
 ```
 ## PR Review: #<n> — <title>
 
@@ -309,16 +350,21 @@ A drop-in GitHub Actions workflow and GitLab CI snippet ship in `examples/ci-git
 <2-4 sentences: what was reviewed, what was not (out of scope, large generated
 files), what's the residual risk, why this decision is the right one.>
 
-### 🛑 Critical (must fix before merge)
-- **[SC1-AUTH-MISSING] api/users.ts:42**: <problem>. → <fix>.
-- **[DA1-SCHEMA-BREAK] migrations/0042.sql:5**: <problem>. → <fix>.
+### 🛑 Critical (must fix before merge) — see inline comments
+- **[SC1-AUTH-MISSING]** api/users.ts:42 — *see inline comment*
+- **[DA1-SCHEMA-BREAK]** migrations/0042.sql:5 — *see inline comment*
 
-### ⚠️ Important (should fix)
-- **[IN2-OBSERVABILITY-GAP] services/billing.ts:118**: <problem>. → <fix>.
-- **[SE2-CONTRACT-DRIFT] sdk/index.ts:7**: <problem>. → <fix>.
+### ⚠️ Important (should fix) — see inline comments
+- **[IN2-OBSERVABILITY-GAP]** services/billing.ts:118 — *see inline comment*
+- **[SE2-CONTRACT-DRIFT]** sdk/index.ts:7 — *see inline comment*
 
 ### Suggestions (improve when convenient)
-- **[IN7-PERF-HOTPATH] services/search.ts:88**: <problem>. → <fix>.
+- **[IN7-PERF-HOTPATH]** services/search.ts:88 — *see inline comment* (or full body here when not inline)
+
+### Findings without inline anchor
+- **[SE4-MODULE-SHAPE]** services/billing — `BillingClient`, `BillingCache`,
+  and `BillingMetrics` all live in `billing.ts`; consider splitting along the
+  three responsibilities. (No single line to anchor; surfaced here only.)
 
 ### Delegations
 - Run `/ship-tested-code` on `services/billing.test.ts` (TS1: PR adds production code with no test).
@@ -335,25 +381,35 @@ files), what's the residual risk, why this decision is the right one.>
 - Migration includes backfill + rollback plan in PR body.
 - BillingClient is constructor-injected, replacing a static singleton.
 - New tests use the standard factory pattern.
+```
 
 ### Submission preview (local mode only)
+
+```
+Will post 1 review with:
+  - 4 inline comments  (2 with suggestion fences, 2 prose-only)
+  - 1 finding in "Findings without inline anchor"
+  - Decision: REQUEST_CHANGES
+
   gh api ... (create pending review)
-  gh api ... (post 2 inline comments)
+  gh api ... (post 4 inline comments)
   gh api ... -f event=REQUEST_CHANGES -f body=<summary>
 Proceed? yes / edit / no
 ```
 
 Rules for the output:
+- **Inline comments are mandatory** for every Critical and Important finding with a `file:line` target. The summary body's bullets are pointers, not duplicates.
 - **Decision is always present.** No "I'm not sure" — the matrix decides.
 - **Decision line carries one verdict glyph.** Prefix the verdict with `✅` for APPROVE, `🛑` for REQUEST_CHANGES, `💬` for COMMENT. The `Critical` and `Important` section headers prepend `🛑` and `⚠️` respectively, **only when the section has at least one finding** — empty (`(none)`) sections keep a plain header so the glyph always means "this needs attention." No emoji elsewhere in the body, on per-finding bullets, or in the JSON output.
 - **Confidence section is always present** and substantive (not "looks fine").
 - **What's Good is always present** with concrete observations.
 - **Delegations are separate** from findings and do not affect the decision.
 - **Comment lifecycle line is always present**, even if everything is empty (show zeros).
+- **"Findings without inline anchor" is omitted** when no such findings exist; otherwise listed last among the finding sections.
 - Tag every finding with its priority code (SE1, SC2, etc.).
 - Include specific file:line.
-- Every finding has a concrete fix suggestion.
-- More than 10 findings: show top 10 strictly ordered by priority. Never suppress *1 findings due to the cap.
+- Every inline finding includes a concrete fix — either a `suggestion` fence (when it qualifies per the rules above) or prose.
+- More than 10 inline findings: show top 10 strictly ordered by priority. Never suppress *1 findings due to the cap. Remaining are summarized in the body as a count by tier ("+ N more findings: P6 readability × A, P7 style × B"). Reviewers who want the complete list re-run with `--json` to get the unfiltered finding array.
 
 ## Pragmatism Guidelines
 

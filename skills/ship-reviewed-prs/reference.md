@@ -184,7 +184,7 @@ After dedup, sort:
 If after sort there are more than 10 findings:
 - Show the top 10 in priority order.
 - *1 findings (SC1/IN1/DA1/SE1/TS1) are NEVER suppressed by the cap. If 11 findings exist and one is SC1, drop something else.
-- Summarize the rest: `+ 5 more findings (3 P6-readability, 2 P7-style) — see full list with --verbose`.
+- Summarize the rest by tier: `+ 5 more findings (3 P6-readability, 2 P7-style)`. Reviewers who want the complete list re-run with `--json` to get the unfiltered finding array.
 
 ---
 
@@ -226,9 +226,9 @@ APPROVE is the default when nothing important is wrong. Critical findings deny; 
 
 ## 6. Submission Protocol
 
-GitHub's pending-review API ensures atomicity: inline comments + summary are submitted as a single review object. Use this protocol whenever the submission has one or more inline comments.
+GitHub's pending-review API ensures atomicity: inline comments + summary are submitted as a single review object. Use this protocol whenever the submission has **one or more** inline comments. Every Critical and Important finding with a `file:line` target is an inline comment by default — see SKILL.md "Submission Protocol" for the obligation.
 
-**Exception — inline-less APPROVE.** When the decision is APPROVE and the finding list contains zero inline comments (clean PR, only a summary body), the simpler `gh pr review <n> --approve --body "<summary>"` form is acceptable and preferred for its brevity. This is the only case where the simpler form is allowed; REQUEST_CHANGES, COMMENT, and any APPROVE with inline findings must use the pending-review protocol below.
+**Exception — inline-less APPROVE only.** When the decision is APPROVE *and* the inline-comment count is exactly zero (clean PR, summary body only), the simpler `gh pr review <n> --approve --body "<summary>"` form is allowed for brevity. REQUEST_CHANGES, COMMENT, and any APPROVE that includes at least one inline comment must use the three-step pending-review protocol below.
 
 ### Step 1: Create pending review
 
@@ -262,6 +262,61 @@ gh api -X POST "repos/<owner>/<repo>/pulls/<n>/reviews/${REVIEW_ID}/comments" \
   -f body="<finding body>"
 ```
 
+### Step 2a: Embed a `suggestion` fence (when the fix qualifies)
+
+When the fix is a small, self-contained, mechanical edit and the comment's line range exactly matches the lines being replaced, embed the replacement in a GitHub `suggestion` fence so the author can hit "Commit suggestion" instead of editing by hand. Qualify / disqualify rules are in the checklist below; the alignment requirement at the end of this subsection is the hard constraint.
+
+**Worked example — IN1-PROD-OUTAGE-RISK on `services/billing.ts:5`.** The diff line is:
+
+```typescript
+  const user = await fetch(`https://billing.internal/users/${userId}`).then(r => r.json());
+```
+
+The inline-comment body posted via Step 2 looks like:
+
+````markdown
+**[IN1-PROD-OUTAGE-RISK]** `fetch("https://billing.internal/users/...")` has
+no timeout. A slow billing-internal will hang this function indefinitely,
+blocking the calling request and exhausting connection-pool capacity.
+
+```suggestion
+  const user = await fetch(`https://billing.internal/users/${userId}`, { signal: AbortSignal.timeout(5000) }).then(r => r.json());
+```
+````
+
+Posted with:
+
+```bash
+gh api -X POST "repos/<owner>/<repo>/pulls/<n>/reviews/${REVIEW_ID}/comments" \
+  -f path="services/billing.ts" \
+  -F line=5 \
+  -f side="RIGHT" \
+  -f body="$(cat <<'EOF'
+**[IN1-PROD-OUTAGE-RISK]** `fetch("https://billing.internal/users/...")` has
+no timeout. A slow billing-internal will hang this function indefinitely,
+blocking the calling request and exhausting connection-pool capacity.
+
+\`\`\`suggestion
+  const user = await fetch(\`https://billing.internal/users/\${userId}\`, { signal: AbortSignal.timeout(5000) }).then(r => r.json());
+\`\`\`
+EOF
+)"
+```
+
+(The backticks and `${}` inside a `bash -c` heredoc need to be escaped — `\`\`\`` and `\${}` — so the shell does not interpret them. If posting via a language SDK or a JSON-only path, no escaping is needed.)
+
+**Suggestion qualify / disqualify checklist:**
+
+| Qualifies (use a fence) | Disqualifies (keep as prose) |
+|-------------------------|------------------------------|
+| Add `signal: AbortSignal.timeout(5000)` to an existing `fetch()` | Add a new metric counter (needs new import from `lib/observability.ts`) |
+| Swap `var` → `const` on a single declaration | Refactor a function into smaller helpers |
+| Add `requireAuth` middleware to a single route declaration | Restructure a module across three files |
+| Replace `console.log(user)` with `logger.info("...", { user_id })` *if* the structured logger is already imported in the file | Replace `console.log` with a logger that needs a new import |
+| Fix a typo in a string literal | "Consider using async iteration here" — an opinion, not a textual edit |
+
+**Alignment requirement.** If a comment contains a `suggestion` fence, the comment's `line` (and `start_line` for multi-line ranges) MUST equal the lines being replaced. GitHub renders the fence inline with the existing diff and a one-click "Commit suggestion" button — a misaligned range produces a button that either replaces the wrong lines or fails to apply.
+
 ### Step 3: Submit the review
 
 ```bash
@@ -273,8 +328,9 @@ gh api -X POST "repos/<owner>/<repo>/pulls/<n>/reviews/${REVIEW_ID}/events" \
 ### Error handling
 
 - If step 1 fails: exit `3`, no cleanup needed (no resources created).
-- If step 2 fails partway: dismiss the pending review with `gh api -X DELETE "repos/.../reviews/${REVIEW_ID}"`. Exit `3`. Never leave a half-formed pending review attached.
-- If step 3 fails: same cleanup. Pending reviews are visible to the author and confusing.
+- If a single Step 2 call fails with **422** (line outside the diff, file not in PR, invalid `start_line`) or **404** (path not found on the head ref): demote that finding's body into the summary's "Findings without inline anchor" section, log the failure to stderr with the persona/finding ID and the gh error message, and continue posting the remaining inline comments. A single bad inline range must not abort the entire review.
+- If Step 2 fails for an unrelated reason (5xx, network, rate limit) AND retry with backoff also fails: dismiss the pending review with `gh api -X DELETE "repos/.../reviews/${REVIEW_ID}"`. Exit `3`. Never leave a half-formed pending review attached.
+- If step 3 fails: same cleanup as the unrelated-Step-2 case. Pending reviews are visible to the author and confusing.
 
 ### Bot identity prefix (CI mode)
 
@@ -356,7 +412,10 @@ For GitHub Enterprise: respect `GH_HOST` env var. `gh` CLI handles routing autom
   "submission": {
     "submitted": true,
     "submitted_event": "REQUEST_CHANGES",
-    "review_url": "https://github.com/ship-it-ops/ship-code/pull/47#pullrequestreview-1234567"
+    "review_url": "https://github.com/ship-it-ops/ship-code/pull/47#pullrequestreview-1234567",
+    "inline_comments_posted": 3,
+    "suggestion_blocks_used": 1,
+    "inline_comments_failed": 0
   }
 }
 ```
