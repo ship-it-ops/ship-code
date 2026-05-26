@@ -126,6 +126,8 @@ Run the `<skill-name>` skill with arguments: $ARGUMENTS
 
 Important: `allowed-tools` on the *command* is the binding constraint at runtime — the skill's own `allowed-tools` does not expand it. If the skill needs `Task` (subagents) or shell beyond `gh`/`git`, the command must declare them too. Skills marked `disable-model-invocation: true` are reachable *only* via a slash command, so the `commands/` file is mandatory for those.
 
+For skills that require mode detection, subagent orchestration, or any non-trivial delegation logic, the minimal one-line body above is not enough — an LLM handed only that sparse body may attempt to inline-implement the skill instead of loading it. See `plugins/ship-reviewed-prs/commands/review-pr.md` for a complete template that passes arguments through verbatim, instructs Claude to invoke the skill via the `Skill` tool, and honors the skill's CI-vs-local mode detection.
+
 ## Validation
 
 CI runs six jobs on every PR (`.github/workflows/validate-skills.yml`):
