@@ -198,7 +198,10 @@ interface Delegation {
     "submitted": true,
     "submitted_event": "REQUEST_CHANGES",
     "review_url": "https://github.com/ship-it-ops/billing-service/pull/4811#pullrequestreview-1234567",
-    "capped": false
+    "capped": false,
+    "inline_comments_posted": 4,
+    "suggestion_blocks_used": 1,
+    "inline_comments_failed": 0
   },
   "confidence": {
     "files_reviewed": 4,
@@ -227,7 +230,10 @@ When the team's `overrides.md` has `ci_max_decision: COMMENT` set and the skill 
     "submitted_event": "COMMENT",
     "capped": true,
     "capped_from": "REQUEST_CHANGES",
-    "review_url": "..."
+    "review_url": "...",
+    "inline_comments_posted": 4,
+    "suggestion_blocks_used": 1,
+    "inline_comments_failed": 0
   }
 }
 ```

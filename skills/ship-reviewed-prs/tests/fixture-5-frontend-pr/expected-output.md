@@ -4,6 +4,8 @@ The skill should produce a report substantially matching the structure below. Th
 
 Each finding is annotated with `# Copilot finding #N` to cross-check coverage against the original 10 missed findings. Target: 10/10 catch rate after FE persona is fully wired up. Pre-FE baseline: 2/10 (only #3 aria-errormessage and the lock file were caught).
 
+> **Format note (v1.2+):** Under the inline-first protocol every Critical and Important finding below should be posted as an inline review comment on the cited `file:line`. The summary body bullets are reduced to `[FINDING-ID] file:line — see inline comment`. A handful qualify for a `suggestion` fence — notably **FE5-SSR-GLOBAL-CSS** (delete the offending `import './styles.css'` line; one-line deletion qualifies) and the **InlineEdit FE4-NO-OP-PROP-VALUE** if the chosen resolution is "remove `'focus'` from the union" (single-line type edit). The FE1/FE2/FE3 findings on `GraphEditorCanvas.tsx` require multi-line refactors and stay as prose. The full finding text below is what should appear in the inline-comment bodies.
+
 ---
 
 ```
