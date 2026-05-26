@@ -303,17 +303,17 @@ A drop-in GitHub Actions workflow and GitLab CI snippet ship in `examples/ci-git
 ```
 ## PR Review: #<n> — <title>
 
-### Decision: APPROVE | REQUEST_CHANGES | COMMENT
+### Decision: ✅ APPROVE | 🛑 REQUEST_CHANGES | 💬 COMMENT
 
 ### Confidence
 <2-4 sentences: what was reviewed, what was not (out of scope, large generated
 files), what's the residual risk, why this decision is the right one.>
 
-### Critical (must fix before merge)
+### 🛑 Critical (must fix before merge)
 - **[SC1-AUTH-MISSING] api/users.ts:42**: <problem>. → <fix>.
 - **[DA1-SCHEMA-BREAK] migrations/0042.sql:5**: <problem>. → <fix>.
 
-### Important (should fix)
+### ⚠️ Important (should fix)
 - **[IN2-OBSERVABILITY-GAP] services/billing.ts:118**: <problem>. → <fix>.
 - **[SE2-CONTRACT-DRIFT] sdk/index.ts:7**: <problem>. → <fix>.
 
@@ -345,6 +345,7 @@ Proceed? yes / edit / no
 
 Rules for the output:
 - **Decision is always present.** No "I'm not sure" — the matrix decides.
+- **Decision line carries one verdict glyph.** Prefix the verdict with `✅` for APPROVE, `🛑` for REQUEST_CHANGES, `💬` for COMMENT. The `Critical` and `Important` section headers prepend `🛑` and `⚠️` respectively, **only when the section has at least one finding** — empty (`(none)`) sections keep a plain header so the glyph always means "this needs attention." No emoji elsewhere in the body, on per-finding bullets, or in the JSON output.
 - **Confidence section is always present** and substantive (not "looks fine").
 - **What's Good is always present** with concrete observations.
 - **Delegations are separate** from findings and do not affect the decision.

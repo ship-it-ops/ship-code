@@ -9,14 +9,14 @@ Each finding is annotated with `# Copilot finding #N` to cross-check coverage ag
 ```
 ## PR Review: #47 — Add support for graph editing
 
-### Decision: REQUEST_CHANGES
+### Decision: 🛑 REQUEST_CHANGES
 
 ### Confidence
 Reviewed 29 files (compressed diff of 56 changed files; pnpm-lock.yaml skipped as generated). Conditional FE persona activated (TSX-heavy diff with new aria-* attributes, new `import './styles.css'` in non-entry module, .changeset/*.md files). Conditional DA persona did not activate. IN deep mode did not activate. SC scanned all files; flagged one SC3 on `.claude/scheduled_tasks.lock`. CI is green. Zero existing review threads. The decision is REQUEST_CHANGES because FE produced five *1-tier findings on the GraphEditorCanvas state-management surface plus an ARIA contract break in InlineEdit.
 
 Generated/vendored skipped: 1 (pnpm-lock.yaml).
 
-### Critical (must fix before merge)
+### 🛑 Critical (must fix before merge)
 
 - **[FE1-A11Y-CONTRACT-BROKEN] packages/ui/src/components/InlineEdit/InlineEdit.tsx:234**: `aria-errormessage` references `${rest.id ?? 'inline-edit'}-error`, but no element with that id is rendered anywhere in the component. The error string from `validate()` lives only in `error` state — sighted users see the red border, AT users get a dangling ARIA reference. → Render the error adjacent to the input: `{error && <p id={`${rest.id ?? 'inline-edit'}-error`} role="alert" className="text-err mt-1 text-[11px]">{error}</p>}` inside a fragment with the `<input>`. # Copilot finding #3
 
@@ -32,7 +32,7 @@ Generated/vendored skipped: 1 (pnpm-lock.yaml).
 
 - **[FE3-COMMAND-HISTORY-INCOMPLETE] packages/graph-editor/src/GraphEditorCanvas.tsx:397**: When Delete is pressed with both nodes and edges selected, `deleteSelectedNodes()` records a `delete-node` command whose inverse already restores incident edges, AND `deleteSelectedEdges()` records a separate `delete-edge` for each selected edge. If a selected edge is incident to a selected node, undo re-adds it twice — duplicate edges. → Before pushing `delete-edge` commands, subtract edges already covered by a `delete-node` in this batch. # Copilot finding #9
 
-### Important (should fix)
+### ⚠️ Important (should fix)
 
 - **[FE4-NO-OP-PROP-VALUE] packages/ui/src/components/InlineEdit/InlineEdit.tsx:86**: `activate` is typed `'click' | 'focus'` but no implementation branch on `activate === 'focus'` exists; only the `'click'` path triggers `startEdit()`. The prop value is type-system-valid and silently does nothing at runtime. → Either implement focus activation (start edit on `onFocus` when `activate === 'focus'`), or remove `'focus'` from the `Activation` union. # Copilot finding #1
 

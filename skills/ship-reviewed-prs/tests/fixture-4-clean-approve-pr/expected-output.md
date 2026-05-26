@@ -3,7 +3,7 @@
 ```
 ## PR Review: #1234 — Fix typo in onboarding doc
 
-### Decision: APPROVE
+### Decision: ✅ APPROVE
 
 ### Confidence
 Reviewed 1 docs file (docs/onboarding.md, 1 line changed). Docs-only PR — SE, IN, DA, TS personas skip per Pragmatism guidelines. SC scanned for secrets/leaked URLs/sensitive references; clean. No existing review threads. CI green. This is the cleanest possible approval path: docs typo fix, no operational dimension, no surface for new findings.

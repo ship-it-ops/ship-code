@@ -51,14 +51,14 @@ diff --git a/sdk/index.ts b/sdk/index.ts
 ```
 ## PR Review: #4811 — Add billing-tier feature flag and migration
 
-### Decision: REQUEST_CHANGES
+### Decision: 🛑 REQUEST_CHANGES
 
 ### Confidence
 Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 generated, 0 vendor files. Conditional DA persona activated (schema migration). Conditional IN-deep persona did not activate (no IaC). CI is green. 3 existing review threads classified — 1 won't-fix, 1 outdated, 1 still open. Suppressed 2 candidate findings: a DA5-TYPE-PRECISION concern about the TEXT column matched Thread A (WONT_FIX, tracked in #4820) and was dropped silently; an SC1-AUTH-MISSING concern on the admin endpoint matched Thread C (OPEN) and is surfaced under "Open threads still need author response" rather than re-raised as a fresh finding. The decision is REQUEST_CHANGES because Thread C carries an SC1-priority concern that remains unresolved, plus fresh Critical findings on the timeout and SDK contract.
 
 Findings are tiered by the documented priority rule (1-2 Critical, 3-5 Important, 6-7 Suggestion). Some placements look stricter than feel — IN2 OBSERVABILITY-GAP being Critical, SC7 LOG-LEAKAGE being a Suggestion — but the example follows the rule consistently so reviewers can rely on it.
 
-### Critical (must fix before merge)
+### 🛑 Critical (must fix before merge)
 
 - **[IN1-PROD-OUTAGE-RISK] services/billing.ts:5**: `fetch("https://billing.internal/users/...")` has no timeout. A slow billing-internal will hang this function indefinitely, blocking the calling request and exhausting connection pool capacity. → Add `signal: AbortSignal.timeout(5000)` and a retry policy: see `lib/http.ts` for the team's `httpWithRetry` helper.
 
@@ -66,7 +66,7 @@ Findings are tiered by the documented priority rule (1-2 Critical, 3-5 Important
 
 - **[SE2-CONTRACT-DRIFT] sdk/index.ts:7**: `User.tier` is added as `Optional` to the public SDK type. SDK consumers that destructure `{ tier }` will get `undefined` where they didn't before, and JSON parsers without strict typing will not raise on missing `tier`. → If the migration backfills `tier` for all users, mark the field required (`tier: "free" | "pro" | "premium"`). If you want it optional during the rollout window, document the rollout plan in the SDK changelog.
 
-### Important (should fix)
+### ⚠️ Important (should fix)
 
 - **[DA3-BACKFILL-MISSING] migrations/0042_add_user_tier.sql:1**: Adding NOT NULL `tier` to an existing populated `users` table. Migration will fail when run against production data. → Three-step migration:
   1. Add column nullable with default: `ALTER TABLE users ADD COLUMN tier TEXT DEFAULT 'free'`.

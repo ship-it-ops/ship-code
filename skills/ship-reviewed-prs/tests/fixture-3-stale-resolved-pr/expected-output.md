@@ -3,7 +3,7 @@
 ```
 ## PR Review: #4980 — Refactor payment processing for retries
 
-### Decision: COMMENT
+### Decision: 💬 COMMENT
 
 ### Confidence
 Reviewed 1 file (services/payments.ts, 45 net added lines). No conditional personas activated. CI green. Long-lived PR with 6 existing review threads — applied aggressive lifecycle suppression. Three threads resolved (parametrized retry policy, UUID idempotency key, structured logging) and two won't-fix-marked (per-merchant retry policy → tracked in #5001; circuit breaker → discussed offline). One open thread (Grace's retry-exhaustion test request) remains. The skill suppressed 3 candidate findings that would have re-raised resolved/won't-fix concerns. The remaining advisory is the missing test coverage signal.

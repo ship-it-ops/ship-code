@@ -8,7 +8,7 @@ ask the author/oncall for human judgment on disputed findings.
 
 ## PR Review: #2200 — docs(contributing): add slash-command authoring guidance
 
-### Decision: APPROVE
+### Decision: ✅ APPROVE
 
 ### Confidence
 Reviewed CONTRIBUTING.md (+28 lines, 0 deletions) as a pure docs-only PR. SC ran a full pass for secret/URL leakage — clean. SE ran a technical-accuracy pass against the rest of the contributing guide. IN/DA/FE/TS did not activate. One P6 suggestion found. CI green. APPROVE with a Suggestions caveat — the finding is advisory and does not block the verdict per the updated decision matrix.
