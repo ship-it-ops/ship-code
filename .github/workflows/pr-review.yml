@@ -5,13 +5,16 @@ name: PR Review
 #
 # Required repo secret: CLAUDE_CODE_OAUTH_TOKEN
 #
-# Important: the action pulls the plugin from the marketplace URL below, which
-# resolves to the default branch of THIS repo. PRs that touch the plugin source
-# are therefore reviewed by the previous (main) version of the plugin, not the
-# version proposed in the PR — a safety guard, since otherwise a PR could
-# rewrite SKILL.md to exfiltrate secrets via the review prompt. To smoke-test
-# plugin changes on a PR before merge, run the skill locally with
-# `claude plugin update ship-reviewed-prs` against a checkout of your branch.
+# Important: the action installs the plugin from the LOCAL checkout (the PR
+# merge ref), so each PR is reviewed by the version of the plugin it proposes —
+# plugin changes self-review on the same PR. This is convenient for fast
+# iteration on plugin logic but means a malicious PR could rewrite SKILL.md to
+# affect the reviewer (e.g. exfiltrate the workflow's GITHUB_TOKEN). Mitigated
+# by GitHub's "Require approval for all outside collaborators" setting — runs
+# from non-member contributors must be manually approved before the workflow
+# executes. If that setting is ever relaxed, flip `plugin_marketplaces` back
+# to the marketplace URL ('https://github.com/ship-it-ops/ship-code.git') to
+# restore main-only review.
 
 on:
   pull_request:
@@ -91,10 +94,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Pull from the main branch of this repo's marketplace. Reviewing
-          # this repo's own PRs is the dogfooding loop; see header comment
-          # for why we deliberately use main and not the PR head.
-          plugin_marketplaces: 'https://github.com/ship-it-ops/ship-code.git'
+          # Install from the local checkout (PR merge ref) rather than the
+          # marketplace URL. PRs that touch the plugin self-review with their
+          # own changes; see header comment for the trust-model tradeoff.
+          plugin_marketplaces: '.'
           plugins: 'ship-reviewed-prs@ship-code'
           # Default exit behavior: REQUEST_CHANGES exits 1 (fails the job),
           # APPROVE and COMMENT exit 0. Add `--strict` if you want COMMENT
