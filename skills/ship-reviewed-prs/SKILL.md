@@ -7,9 +7,8 @@ description: >
   findings that are already resolved, marked won't-fix, or addressed in a later
   commit. Computes a deterministic APPROVE / REQUEST_CHANGES / COMMENT decision
   and can submit the review via gh CLI (with confirmation gating in local mode
-  and full automation in CI). Manual invocation only.
-disable-model-invocation: true
-allowed-tools: Bash(gh *), Bash(git *), Read, Grep, Glob
+  and full automation in CI).
+allowed-tools: Task, TodoWrite, Bash, Read, Grep, Glob
 argument-hint: "[pr-number-or-url] [--auto-approve] [--non-interactive] [--json] [--strict]"
 ---
 

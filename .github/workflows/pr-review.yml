@@ -1,0 +1,102 @@
+name: PR Review
+
+# Dogfoods the ship-reviewed-prs plugin against PRs to this repository so we
+# notice regressions before they ship to downstream consumers (e.g. ShipIt-AI).
+#
+# Required repo secret: CLAUDE_CODE_OAUTH_TOKEN
+#
+# Important: the action pulls the plugin from the marketplace URL below, which
+# resolves to the default branch of THIS repo. PRs that touch the plugin source
+# are therefore reviewed by the previous (main) version of the plugin, not the
+# version proposed in the PR — a safety guard, since otherwise a PR could
+# rewrite SKILL.md to exfiltrate secrets via the review prompt. To smoke-test
+# plugin changes on a PR before merge, run the skill locally with
+# `claude plugin update ship-reviewed-prs` against a checkout of your branch.
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Claude Code Review
+    runs-on: ubuntu-latest
+    # Skip drafts — review when the author is ready for feedback.
+    if: github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Need history reaching the base ref so the workflow-change diff
+          # below can compare against it.
+          fetch-depth: 0
+
+      # The Claude action only runs against the workflow definition on the
+      # default branch — a security measure so a PR can't modify the prompt
+      # to exfiltrate secrets. If this PR touches this workflow file itself,
+      # skip the review with an explanatory comment instead of running a
+      # potentially-tampered prompt.
+      - name: Detect changes to this workflow file
+        id: workflow_check
+        run: |
+          base="${{ github.event.pull_request.base.ref }}"
+          if git diff --name-only "origin/$base...HEAD" -- .github/workflows/pr-review.yml | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post skip notice (this workflow modified)
+        if: steps.workflow_check.outputs.changed == 'true'
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        with:
+          script: |
+            const marker = '<!-- claude-review-skip-workflow-changed -->';
+            const body = [
+              marker,
+              '⏭️ **Claude review skipped on this PR**',
+              '',
+              'This PR modifies `.github/workflows/pr-review.yml`, the workflow that defines this review. The automated review only runs against the workflow definition on the default branch (a safety guard so a PR cannot rewrite its own reviewer prompt), so it is suppressed here.',
+              '',
+              'Once this PR is merged into `main`, future PRs will be reviewed against the updated workflow. You can mention `@claude` in a comment if you want a manual review on this PR.',
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Run Claude Code Review
+        id: claude-review
+        if: steps.workflow_check.outputs.changed != 'true'
+        uses: anthropics/claude-code-action@v1
+        env:
+          # The ship-reviewed-prs skill auto-detects CI mode from CI=true (set
+          # by GitHub Actions) and submits the review via `gh`. Give gh the
+          # default workflow token — same scope the rest of CI uses.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Pull from the main branch of this repo's marketplace. Reviewing
+          # this repo's own PRs is the dogfooding loop; see header comment
+          # for why we deliberately use main and not the PR head.
+          plugin_marketplaces: 'https://github.com/ship-it-ops/ship-code.git'
+          plugins: 'ship-reviewed-prs@ship-code'
+          # Default exit behavior: REQUEST_CHANGES exits 1 (fails the job),
+          # APPROVE and COMMENT exit 0. Add `--strict` if you want COMMENT
+          # to also fail.
+          prompt: '/ship-reviewed-prs ${{ github.event.pull_request.number }}'
