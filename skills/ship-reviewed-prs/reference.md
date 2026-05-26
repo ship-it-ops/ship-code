@@ -184,7 +184,7 @@ After dedup, sort:
 If after sort there are more than 10 findings:
 - Show the top 10 in priority order.
 - *1 findings (SC1/IN1/DA1/SE1/TS1) are NEVER suppressed by the cap. If 11 findings exist and one is SC1, drop something else.
-- Summarize the rest: `+ 5 more findings (3 P6-readability, 2 P7-style) — see full list with --verbose`.
+- Summarize the rest by tier: `+ 5 more findings (3 P6-readability, 2 P7-style)`. Reviewers who want the complete list re-run with `--json` to get the unfiltered finding array.
 
 ---
 

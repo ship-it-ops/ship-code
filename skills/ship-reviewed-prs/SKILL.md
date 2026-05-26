@@ -409,7 +409,7 @@ Rules for the output:
 - Tag every finding with its priority code (SE1, SC2, etc.).
 - Include specific file:line.
 - Every inline finding includes a concrete fix — either a `suggestion` fence (when it qualifies per the rules above) or prose.
-- More than 10 inline findings: show top 10 strictly ordered by priority. Never suppress *1 findings due to the cap. Remaining are summarized in the body ("+ N more — see full list with --verbose").
+- More than 10 inline findings: show top 10 strictly ordered by priority. Never suppress *1 findings due to the cap. Remaining are summarized in the body as a count by tier ("+ N more findings: P6 readability × A, P7 style × B"). Reviewers who want the complete list re-run with `--json` to get the unfiltered finding array.
 
 ## Pragmatism Guidelines
 

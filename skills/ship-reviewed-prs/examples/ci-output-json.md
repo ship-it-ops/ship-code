@@ -53,8 +53,11 @@ interface ReviewResult {
     submitted: boolean;
     submitted_event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
     review_url: string;
-    capped: boolean;        // true if ci_max_decision downgraded the action
-    capped_from?: string;   // original decision if capped
+    capped: boolean;                // true if ci_max_decision downgraded the action
+    capped_from?: string;           // original decision if capped
+    inline_comments_posted: number; // count of inline comments successfully posted to the review
+    suggestion_blocks_used: number; // subset of the above that embedded a `suggestion` fence
+    inline_comments_failed: number; // count demoted to the summary body after a 404/422 from the comments API
   };
 
   // Confidence metadata
