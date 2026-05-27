@@ -165,11 +165,22 @@ Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 ge
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 3 | `IN1 services/billing.ts:5` · `IN2 api/admin.ts:42` · `SE2 sdk/index.ts:7` |
-| Should-fix | 1 | `DA3 migrations/0042_add_user_tier.sql:1` |
-| Nits | 1 | `SC7 services/billing.ts:6` |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 3 |
+| Should-fix | 1 |
+| Nits       | 1 |
+
+**Must-fix anchors:**
+- `IN1` services/billing.ts:5 — see inline comment (with `suggestion` fence)
+- `IN2` api/admin.ts:42 — see inline comment
+- `SE2` sdk/index.ts:7 — see inline comment
+
+**Should-fix anchors:**
+- `DA3` migrations/0042_add_user_tier.sql:1 — see inline comment
+
+**Nit anchors:**
+- `SC7` services/billing.ts:6 — see inline comment
 
 ### Delegations
 - Run `/ship-tested-code` on this PR — production code added in `services/billing.ts` and `api/admin.ts` (52 net added lines) with no test files modified. TS1 triggered.

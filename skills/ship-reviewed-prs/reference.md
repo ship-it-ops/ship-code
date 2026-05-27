@@ -328,7 +328,7 @@ gh api -X POST "repos/<owner>/<repo>/pulls/<n>/reviews/${REVIEW_ID}/events" \
 ### Error handling
 
 - If step 1 fails: exit `3`, no cleanup needed (no resources created).
-- If a single Step 2 call fails with **422** (line outside the diff, file not in PR, invalid `start_line`) or **404** (path not found on the head ref): demote that finding's body into the summary's "Findings without inline anchor" section, log the failure to stderr with the persona/finding ID and the gh error message, and continue posting the remaining inline comments. A single bad inline range must not abort the entire review.
+- If a single Step 2 call fails with **422** (line outside the diff, file not in PR, invalid `start_line`) or **404** (path not found on the head ref): demote that finding into its tier's anchor sub-list as an anchorless bullet (`- \`<finding-id>\` <one-line body>. (no inline anchor — original target <path>:<line> rejected by gh)`), log the failure to stderr with the persona/finding ID and the gh error message, and continue posting the remaining inline comments. A single bad inline range must not abort the entire review.
 - If Step 2 fails for an unrelated reason (5xx, network, rate limit) AND retry with backoff also fails: dismiss the pending review with `gh api -X DELETE "repos/.../reviews/${REVIEW_ID}"`. Exit `3`. Never leave a half-formed pending review attached.
 - If step 3 fails: same cleanup as the unrelated-Step-2 case. Pending reviews are visible to the author and confusing.
 
@@ -345,6 +345,88 @@ ask the author/oncall for human judgment on disputed findings.
 ```
 
 The prefix line is configurable via `overrides.md` (`ci_bot_identity_prefix`).
+
+---
+
+## 6a. Summary Body Rendering Details
+
+Full rendering rules for the summary body whose template lives in `SKILL.md` → `## Review Output Format` → `### Summary body`. SKILL.md carries the rule list in stub form; this section is the load-bearing detail.
+
+### Verdict labels
+
+The markdown surface uses friendly labels; the JSON output and exit codes keep the formal `APPROVE` / `REQUEST_CHANGES` / `COMMENT` keywords.
+
+| Markdown label | Formal decision | When |
+|---|---|---|
+| `LGTM` | APPROVE | No findings of any tier, green CI, no open or possibly-addressed threads |
+| `LGTM (with caveats)` | APPROVE | Suggestion-tier (Nit) findings, pending CI, or non-blocking advisory text present |
+| `Changes requested` | REQUEST_CHANGES | Any unsuppressed *1-*2 finding |
+| `Comment` | COMMENT | CI red, lifecycle degraded, possibly-addressed items, or open *3-*5 findings |
+
+The friendly label feeds the markdown `**Verdict: …**` bold paragraph and the JSON `verdict_label` enum (`LGTM` / `LGTM_WITH_CAVEATS` / `CHANGES_REQUESTED` / `COMMENT`).
+
+### `Personas activated` table
+
+- Always rendered with all six rows in canonical order: SE, SC, IN, DA, FE, TS. Consistent shape across PRs makes reviews visually comparable.
+- `Status` is exactly one of three values — no synonyms, no glyph variants:
+  - `✅ active` — persona ran and produced ≥1 finding (any tier, incl. suggestions).
+  - `✅ pass` — persona ran and produced 0 findings.
+  - `⏭ skip` — persona did not run (conditional trigger missed, or disabled by override).
+- `Reason` is a short lowercase noun phrase, no trailing period. Examples: `core code change`, `no schema/migration touched`, `IN-light only — no infra files`, `committed runtime lock file (SC3)`.
+- For IN, the Reason names whether `light` or `deep` mode ran (deep escalates to a subagent).
+- **There is no `A11y` persona.** A11y concerns belong to `FE`. Reviewer models that emit an `A11y` row have regressed; correct it to `FE`.
+
+### `Findings` table + per-tier anchor sub-lists
+
+The Findings surface has two parts: a compact two-column counts table that's always rendered, and per-tier `**<Tier> anchors:**` bullet sub-lists that follow the table only for tiers with a non-zero count.
+
+**Table.** Always rendered with three rows Must-fix / Should-fix / Nits and exactly two columns: `Severity`, `Count`. Severity mapping is fixed and machine-checkable:
+
+- `Must-fix` = priority 1-2 (Critical)
+- `Should-fix` = priority 3-5 (Important)
+- `Nits` = priority 6-7 (Suggestion)
+
+GitHub's markdown renderer squeezes narrow tables to fit the widest column, which means a third "Inline anchors" column wraps the Severity/Count headers awkwardly. Keeping the table at two columns lets it render compactly; anchors live in normal bullet lists below where line wraps don't fight the table.
+
+**Per-tier anchor sub-lists.** For each tier with `Count > 0`, render a `**<Tier> anchors:**` line followed by one bullet per finding in that tier. Bullet format:
+
+- Inline-anchored finding: `` - `<persona-id>` <path>:<line> — see inline comment `` (e.g., `` - `SC1` api/users.ts:42 — see inline comment ``).
+- Anchorless finding (architectural / cross-cutting, no `file:line` target): `` - `<finding-id>` <one-line body summary>. (no inline anchor)`` (e.g., `` - `SE4-MODULE-SHAPE` BillingClient + BillingCache + BillingMetrics should split. (no inline anchor)``).
+
+The anchorless body lives inline in the sub-list — there is no separate `### Findings without inline anchor` section. Keep the body to one line; if it needs more, post it as an inline comment on the most relevant file even if the line target is approximate.
+
+**Overflow rule.** If a tier exceeds ~10 inline-anchored findings, list the top 10 by priority and append a single bullet `- … +N more (see --json)`. The Findings-table `Count` always reflects the full count; only the sub-list truncates. Never suppress *1 findings due to the cap.
+
+**Empty tiers.** When a tier has `Count = 0`, do not render its `**<Tier> anchors:**` heading at all. The zero in the table is sufficient.
+
+### Conditional sections
+
+| Section | Rendered when |
+|---|---|
+| `**<Tier> anchors:**` sub-list under the Findings table | The corresponding tier's `Count > 0` |
+| `### Delegations` | ≥ 1 delegation emitted |
+| `### Stale comments needing reply` | ≥ 1 STALE thread |
+| `### Open threads (still need author response)` | ≥ 1 OPEN thread that matches a candidate finding (suppressed into the open thread) |
+| `### Awaiting CI` | CI state is pending and the verdict is `LGTM (with caveats)` |
+
+Never render these with `(none)` placeholders. Omit them entirely when their predicate is false.
+
+### Always-rendered sections
+
+In order, every review carries: Verdict line, Confidence, Personas activated table, Findings table, Comment lifecycle table, What's solid. Even when counts are zero across the board, these surfaces stay present so reviewers can scan multiple reviews side-by-side.
+
+---
+
+## 6b. Monthly Eval
+
+Each month, pick 3-5 PRs from the prior month that received human review or an external bot (Copilot, Codacy, etc.) review. Re-run `ship-reviewed-prs` against those PRs locally — it's just `gh` calls + the skill, takes 2-3 minutes per PR. Track in a CSV:
+
+| pr_url | skill_findings | external_findings | overlap | skill_missed | skill_extra |
+|--------|---------------|--------------------|---------|--------------|-------------|
+
+After 3 months the trend tells you whether new finding IDs are needed. The FE persona itself was added because this kind of eval caught a 10-finding gap on a single design-system PR. If a category (e.g., FE, IN-deep) is consistently catching fewer findings than the external review, that category's rubric likely has gaps; extend `lang-*.md` or `reference-personas.md` accordingly.
+
+Do not build a full automated corpus eval. The 3-5-PR manual cadence is enough signal for a six-month horizon and avoids the trap of optimizing for a fixed test set (Goodhart's law).
 
 ---
 

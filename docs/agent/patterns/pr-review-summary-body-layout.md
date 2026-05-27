@@ -29,8 +29,7 @@ Shape, in order:
 3. `**Verdict: <label>**` bold paragraph (not a heading). Label ∈ {`LGTM`, `LGTM (with caveats)`, `Changes requested`, `Comment`}.
 4. `### Confidence` — prose, 2-4 sentences.
 5. `### Personas activated` — six-row table SE / SC / IN / DA / FE / TS, status ∈ {`✅ active`, `✅ pass`, `⏭ skip`}.
-6. `### Findings` — three-row table Must-fix (P1-2) / Should-fix (P3-5) / Nits (P6-7), `Count` + `Inline anchors`.
-7. `### Findings without inline anchor` (conditional — only when ≥1 anchorless finding exists).
+6. `### Findings` — two-column table Severity | Count, three rows Must-fix (P1-2) / Should-fix (P3-5) / Nits (P6-7). For each tier with `Count > 0`, render a `**<Tier> anchors:**` bullet sub-list below the table. Anchorless findings (no `file:line` target) appear as one-line bullets in their tier's sub-list with a `(no inline anchor)` marker — there is no separate "Findings without inline anchor" section.
 8. `### Delegations` (conditional — omitted when empty).
 9. `### Comment lifecycle` — six-row table Resolved / Won't-fix / Outdated / Possibly addressed / Stale / Open + trailing `Suppressed N findings...` line. ALWAYS rendered.
 10. `### Stale comments needing reply` (conditional — omitted when empty).
@@ -52,7 +51,7 @@ Always-rendered sections: Verdict line, Confidence, Personas activated, Findings
 - **Always six rows in Personas activated**, even when a persona is skipped. Consistent shape across PRs lets reviewers scan multiple reviews comparably.
 - **`✅ pass` ≠ `⏭ skip`.** `pass` means the persona ran and produced zero findings; `skip` means it didn't run at all (conditional trigger missed, or disabled by override). Mixing these loses the "we looked" signal.
 - **Friendly label in markdown, formal keyword in JSON.** The JSON `decision` field is still `APPROVE` / `REQUEST_CHANGES` / `COMMENT`. The new `verdict_label` field carries the friendly enum (`LGTM` / `LGTM_WITH_CAVEATS` / `CHANGES_REQUESTED` / `COMMENT`). Exit codes follow `decision`, not `verdict_label`.
-- **Inline anchors use `<persona-id> path:line` form**, separated by ` · ` (middle dot, spaces). If a cell exceeds ~5 anchors, switch to `<br>` line breaks; if it would exceed ~250 chars, truncate and append ` · +N more`. Full list always available in `--json`.
+- **Anchors are bullet sub-lists below the Findings table, not a third column.** GitHub's renderer squeezes narrow Severity/Count columns to fit a wide third column, which produces ugly header wraps ("Severit-y", "Cou-nt"). Two-column table + per-tier `**<Tier> anchors:**` bullet sub-lists is the canonical shape. See [[pr-review-table-driven-summary-format]] revisit history.
 - **No `A11y` persona.** A11y concerns belong to `FE`. Watch for reviewer models freelancing an `A11y` row in the Personas table.
 
 ## Verification

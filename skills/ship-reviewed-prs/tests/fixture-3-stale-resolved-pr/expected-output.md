@@ -21,11 +21,11 @@ Reviewed 1 file (services/payments.ts, 45 net added lines). CI green. Long-lived
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 0 | — |
-| Should-fix | 0 | — |
-| Nits | 0 | — |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 0 |
+| Should-fix | 0 |
+| Nits       | 0 |
 
 (All substantive concerns are either resolved, won't-fix-marked, or already raised by Grace in thread T6.)
 

@@ -54,11 +54,14 @@ Reviewed 1 file (api/users.ts). No existing review threads. CI is green. The Mus
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 1 | `SC1 api/users.ts:14` |
-| Should-fix | 0 | — |
-| Nits | 0 | — |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 1 |
+| Should-fix | 0 |
+| Nits       | 0 |
+
+**Must-fix anchors:**
+- `SC1` api/users.ts:14 — see inline comment (with `suggestion` fence)
 
 ### Comment lifecycle
 

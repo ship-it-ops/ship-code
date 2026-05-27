@@ -23,17 +23,16 @@ Reviewed 2 files (1 schema migration, 1 ORM model). DA persona escalated to suba
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 3 | `DA1 migrations/0042_drop_legacy_id.sql:1` · `DA2 migrations/0042_drop_legacy_id.sql:1` · `IN1 migrations/0042_drop_legacy_id.sql:1` |
-| Should-fix | 0 | — |
-| Nits | 0 | — |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 3 |
+| Should-fix | 0 |
+| Nits       | 0 |
 
-The three Must-fix findings co-locate on the migration script — see inline comments for the full bodies:
-
-- **[DA1-SCHEMA-BREAK]** Dropping `users.legacy_external_id` will break two downstream consumers (`analytics-etl/dbt/models/users_dim.sql:14`, `exports/customer_export_lambda/handler.py:42`). Coordinate with consumers first; run the migration in a follow-up after they've stopped reading.
-- **[DA2-DATA-LOSS-RISK]** `DROP COLUMN` is irreversible. Archive the values first (`INSERT INTO archived_user_legacy_ids SELECT id, legacy_external_id FROM users WHERE legacy_external_id IS NOT NULL`), or document the explicit legal/compliance signoff that none is needed.
-- **[IN1-PROD-OUTAGE-RISK]** `DROP COLUMN` on a populated table takes an ACCESS EXCLUSIVE lock in PostgreSQL. Schedule for a low-traffic window OR follow the DA1 deprecation sequence (subsumes this).
+**Must-fix anchors:** (all three co-locate on the migration script)
+- `DA1` migrations/0042_drop_legacy_id.sql:1 — see inline comment (`DA1-SCHEMA-BREAK`: dropping `users.legacy_external_id` will break two downstream consumers — `analytics-etl/dbt/models/users_dim.sql:14` and `exports/customer_export_lambda/handler.py:42`)
+- `DA2` migrations/0042_drop_legacy_id.sql:1 — see inline comment (`DA2-DATA-LOSS-RISK`: `DROP COLUMN` is irreversible; archive the values first)
+- `IN1` migrations/0042_drop_legacy_id.sql:1 — see inline comment (`IN1-PROD-OUTAGE-RISK`: `DROP COLUMN` takes ACCESS EXCLUSIVE lock in PostgreSQL; schedule for low-traffic window OR follow the DA1 deprecation sequence)
 
 ### Comment lifecycle
 

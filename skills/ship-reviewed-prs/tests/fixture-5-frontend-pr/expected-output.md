@@ -31,13 +31,31 @@ Generated/vendored skipped: 1 (pnpm-lock.yaml).
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 7 | `FE1 packages/ui/src/components/InlineEdit/InlineEdit.tsx:234`<br>`FE1 packages/ui/src/components/InlineEdit/InlineEdit.tsx:223`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:175`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:231`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:331`<br>`FE3 packages/graph-editor/src/GraphEditorCanvas.tsx:387`<br>`FE3 packages/graph-editor/src/GraphEditorCanvas.tsx:397` |
-| Should-fix | 4 | `FE4 packages/ui/src/components/InlineEdit/InlineEdit.tsx:86`<br>`FE5 packages/graph-editor/src/GraphEditorCanvas.tsx:34`<br>`FE6 packages/graph-editor/src/MiniMap.tsx:92`<br>`SC3 .claude/scheduled_tasks.lock:1` |
-| Nits | 1 | `FE7 .changeset/add-graph-editor-canvas.md:7` |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 7 |
+| Should-fix | 4 |
+| Nits       | 1 |
 
-The 11 anchors above are posted as inline comments — see the "Inline comments to post" section at the top of this file for the full finding bodies. Headline summaries (mapped 1:1 to the inline comments, with the `# Copilot finding #N` markers used to score coverage against the original missed PR):
+**Must-fix anchors:**
+- `FE1` packages/ui/src/components/InlineEdit/InlineEdit.tsx:234 — see inline comment
+- `FE1` packages/ui/src/components/InlineEdit/InlineEdit.tsx:223 — see inline comment
+- `FE2` packages/graph-editor/src/GraphEditorCanvas.tsx:175 — see inline comment
+- `FE2` packages/graph-editor/src/GraphEditorCanvas.tsx:231 — see inline comment
+- `FE2` packages/graph-editor/src/GraphEditorCanvas.tsx:331 — see inline comment
+- `FE3` packages/graph-editor/src/GraphEditorCanvas.tsx:387 — see inline comment
+- `FE3` packages/graph-editor/src/GraphEditorCanvas.tsx:397 — see inline comment
+
+**Should-fix anchors:**
+- `FE4` packages/ui/src/components/InlineEdit/InlineEdit.tsx:86 — see inline comment
+- `FE5` packages/graph-editor/src/GraphEditorCanvas.tsx:34 — see inline comment
+- `FE6` packages/graph-editor/src/MiniMap.tsx:92 — see inline comment
+- `SC3` .claude/scheduled_tasks.lock:1 — see inline comment
+
+**Nit anchors:**
+- `FE7` .changeset/add-graph-editor-canvas.md:7 — see inline comment (with `suggestion` fence)
+
+The 12 anchors above are posted as inline comments — see the "Inline comments to post" section at the top of this file for the full finding bodies. Headline summaries (mapped 1:1 to the inline comments, with the `# Copilot finding #N` markers used to score coverage against the original missed PR):
 
 - **[FE1-A11Y-CONTRACT-BROKEN] InlineEdit.tsx:234** — `aria-errormessage` references a `${id}-error` element that is not rendered; AT users get a dangling reference. (#3)
 - **[FE1-A11Y-CONTRACT-BROKEN] InlineEdit.tsx:223** — display-mode `aria-label` is not carried over when swapping to edit-mode `<input>`. (#2)

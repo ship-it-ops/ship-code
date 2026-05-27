@@ -59,11 +59,14 @@ Reviewed CONTRIBUTING.md (+28 lines, 0 deletions) as a pure docs-only PR. SC ran
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 0 | — |
-| Should-fix | 0 | — |
-| Nits | 1 | `SE6 CONTRIBUTING.md:108` |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 0 |
+| Should-fix | 0 |
+| Nits       | 1 |
+
+**Nit anchors:**
+- `SE6` CONTRIBUTING.md:108 — see inline comment (with `suggestion` fence)
 
 ### Delegations
 

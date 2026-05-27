@@ -53,11 +53,25 @@ Generated/vendored skipped: 1 (`pnpm-lock.yaml`).
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 5 | `FE1 packages/ui/src/components/InlineEdit/InlineEdit.tsx:234`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:175`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:231`<br>`FE3 packages/graph-editor/src/GraphEditorCanvas.tsx:387`<br>`FE3 packages/graph-editor/src/GraphEditorCanvas.tsx:397` |
-| Should-fix | 2 | `FE5 packages/graph-editor/src/GraphEditorCanvas.tsx:34` · `SC3 .claude/scheduled_tasks.lock:1` |
-| Nits | 1 | `FE7 .changeset/add-graph-editor-canvas.md:7` |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 5 |
+| Should-fix | 2 |
+| Nits       | 1 |
+
+**Must-fix anchors:**
+- `FE1` packages/ui/src/components/InlineEdit/InlineEdit.tsx:234 — see inline comment
+- `FE2` packages/graph-editor/src/GraphEditorCanvas.tsx:175 — see inline comment
+- `FE2` packages/graph-editor/src/GraphEditorCanvas.tsx:231 — see inline comment
+- `FE3` packages/graph-editor/src/GraphEditorCanvas.tsx:387 — see inline comment
+- `FE3` packages/graph-editor/src/GraphEditorCanvas.tsx:397 — see inline comment
+
+**Should-fix anchors:**
+- `FE5` packages/graph-editor/src/GraphEditorCanvas.tsx:34 — see inline comment
+- `SC3` .claude/scheduled_tasks.lock:1 — see inline comment
+
+**Nit anchors:**
+- `FE7` .changeset/add-graph-editor-canvas.md:7 — see inline comment (with `suggestion` fence)
 
 (Each anchor maps to an inline comment with the full finding body and proposed fix — see "Inline comments to post" above.)
 
@@ -84,7 +98,7 @@ Suppressed 0 findings.
 
 ### Submission preview (local mode only)
   gh api -X POST repos/ship-it-ops/ship-it-design/pulls/47/reviews (create pending review)
-  gh api -X POST .../reviews/${REVIEW_ID}/comments × 7 (one per Must-fix + Should-fix anchor; the Nit FE7 ships with the next iteration of inlines)
+  gh api -X POST .../reviews/${REVIEW_ID}/comments × 8 (one per Must-fix anchor + Should-fix anchor + FE7 Nit; FE7 includes a `suggestion` fence since the fix is a single-file changeset-body rewrite)
   gh api -X POST .../reviews/${REVIEW_ID}/events -f event=REQUEST_CHANGES -f body="<this entire output as the summary, with the Submission preview block stripped>"
 
 Proceed? Type "yes" to submit, "edit" to revise the body, "no" to abort.

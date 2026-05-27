@@ -25,11 +25,11 @@ Reviewed 4 files (1 component, 1 test, 2 barrel exports). FE produced zero findi
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 0 | — |
-| Should-fix | 0 | — |
-| Nits | 0 | — |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 0 |
+| Should-fix | 0 |
+| Nits       | 0 |
 
 ### Comment lifecycle
 

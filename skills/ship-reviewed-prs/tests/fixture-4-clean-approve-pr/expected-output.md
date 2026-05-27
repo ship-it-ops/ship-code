@@ -21,11 +21,11 @@ Reviewed 1 docs file (docs/onboarding.md, 1 line changed). Docs-only PR — SE, 
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 0 | — |
-| Should-fix | 0 | — |
-| Nits | 0 | — |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 0 |
+| Should-fix | 0 |
+| Nits       | 0 |
 
 ### Comment lifecycle
 

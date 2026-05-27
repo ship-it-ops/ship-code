@@ -26,7 +26,7 @@ Adopt the table-driven layout as the canonical summary body. The new layout is:
 - `**Verdict: <label>**` as a bold paragraph (not a heading), where `<label>` is one of `LGTM`, `LGTM (with caveats)`, `Changes requested`, `Comment`
 - `### Confidence` (prose, unchanged)
 - `### Personas activated` — six-row table SE / SC / IN / DA / FE / TS with `Status` ∈ {`✅ active`, `✅ pass`, `⏭ skip`} and a short `Reason` noun phrase
-- `### Findings` — three-row table Must-fix (priority 1-2) / Should-fix (3-5) / Nits (6-7) with `Count` and `Inline anchors` columns; anchors formatted `<persona-id> path:line` separated by ` · ` (or `<br>` for overflow); anchorless findings still count but live in a separate `### Findings without inline anchor` section below the table
+- `### Findings` — two-column table Severity | Count, three rows Must-fix (priority 1-2) / Should-fix (3-5) / Nits (6-7). For each tier with `Count > 0`, render a `**<Tier> anchors:**` bullet sub-list below the table — one bullet per finding (`` - `<persona-id>` <path>:<line> — see inline comment ``). Anchorless findings appear as one-line bullets in the same sub-list with a `(no inline anchor)` marker; there is no separate `### Findings without inline anchor` section. Initial draft used a third `Inline anchors` column inside the table; reversed on 2026-05-26 because GitHub's renderer squeezed the narrow Severity/Count columns into ugly header wraps — see Revisit Triggers below.
 - `### Delegations` (unchanged; omitted when empty)
 - `### Comment lifecycle` — six-row table for thread states Resolved / Won't-fix / Outdated / Possibly addressed / Stale / Open, plus a trailing `Suppressed N findings...` line
 - `### Stale comments needing reply` (unchanged; omitted when empty)
@@ -50,7 +50,7 @@ The JSON output and exit codes keep the formal `APPROVE` / `REQUEST_CHANGES` / `
 
 ## Revisit Triggers
 
-- The `Inline anchors` cell in the Findings table overflows on very large reviews (>5 inline anchors per tier already gets a `<br>` rule; if reviewers report it still looks bad, switch to a separate sub-table per tier).
+- **Already triggered and resolved 2026-05-26:** the original three-column Findings table (Severity | Count | Inline anchors) rendered poorly on GitHub. GitHub's renderer squeezed the Severity/Count columns to fit the wide third column, wrapping the headers ("Severit-y", "Cou-nt"). Resolution: dropped the third column; anchors now live in per-tier `**<Tier> anchors:**` bullet sub-lists below the table. The separate `### Findings without inline anchor` section is also gone — anchorless findings appear inline in their tier's sub-list with a `(no inline anchor)` marker.
 - The `LGTM_WITH_CAVEATS` enum value proves too coarse (e.g. users want to distinguish "suggestion only" from "pending CI only" in the label itself).
 - The fixed six-row Personas table feels redundant for repos that disable specific personas via override; if so, render only enabled personas.
 

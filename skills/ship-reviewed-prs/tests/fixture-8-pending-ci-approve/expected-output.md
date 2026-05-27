@@ -26,11 +26,11 @@ Reviewed README.md (+2 lines, -2 lines) as a docs-only re-ordering of two deploy
 
 ### Findings
 
-| Severity | Count | Inline anchors |
-|---|---|---|
-| Must-fix | 0 | — |
-| Should-fix | 0 | — |
-| Nits | 0 | — |
+| Severity   | Count |
+|---|---|
+| Must-fix   | 0 |
+| Should-fix | 0 |
+| Nits       | 0 |
 
 ### Awaiting CI
 
