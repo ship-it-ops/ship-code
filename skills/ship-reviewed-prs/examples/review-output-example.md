@@ -145,41 +145,53 @@ The PR description mentions `default 'free'` but this SQL does not include
 ## Summary body (posted as the review body)
 
 ```
-## PR Review: #4811 — Add billing-tier feature flag and migration
+## PR Review — #4811 `Add billing-tier feature flag and migration`
 
-### Decision: 🛑 REQUEST_CHANGES
+**Verdict: Changes requested**
 
 ### Confidence
-Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 generated, 0 vendor files. Conditional DA persona activated (schema migration). Conditional IN-deep persona did not activate (no IaC). CI is green. 3 existing review threads classified — 1 won't-fix, 1 outdated, 1 still open. Suppressed 2 candidate findings: a DA5-TYPE-PRECISION concern about the TEXT column matched Thread A (WONT_FIX, tracked in #4820) and was dropped silently; an SC1-AUTH-MISSING concern on the admin endpoint matched Thread C (OPEN) and is surfaced under "Open threads still need author response" rather than re-raised as a fresh finding. The decision is REQUEST_CHANGES because Thread C carries an SC1-priority concern that remains unresolved, plus fresh Critical findings on the timeout and SDK contract.
+Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 generated, 0 vendor files. CI is green. 3 existing review threads classified — 1 won't-fix, 1 outdated, 1 still open. Suppressed 2 candidate findings: a DA5-TYPE-PRECISION concern about the TEXT column matched Thread A (WONT_FIX, tracked in #4820) and was dropped silently; an SC1-AUTH-MISSING concern on the admin endpoint matched Thread C (OPEN) and is surfaced under "Open threads still need author response" rather than re-raised as a fresh finding. The verdict is `Changes requested` because Thread C carries an SC1-priority concern that remains unresolved, plus fresh Must-fix findings on the timeout and SDK contract.
 
-### 🛑 Critical (must fix before merge) — see inline comments
-- **[IN1-PROD-OUTAGE-RISK]** services/billing.ts:5 — *see inline comment* (suggestion attached)
-- **[IN2-OBSERVABILITY-GAP]** api/admin.ts:42 — *see inline comment*
-- **[SE2-CONTRACT-DRIFT]** sdk/index.ts:7 — *see inline comment*
+### Personas activated
 
-### ⚠️ Important (should fix) — see inline comments
-- **[DA3-BACKFILL-MISSING]** migrations/0042_add_user_tier.sql:1 — *see inline comment*
+| Persona | Status | Reason |
+|---|---|---|
+| SE | ✅ active | public SDK type changed |
+| SC | ✅ active | new admin endpoint added; structured-log gap |
+| IN | ✅ active | IN-light — services/billing.ts hits an internal HTTP without timeout |
+| DA | ✅ active | new migration + NOT NULL column |
+| FE | ⏭ skip | no TSX/JSX in diff |
+| TS | ✅ active | production code added with no test files modified |
 
-### Suggestions (improve when convenient)
-- **[SC7-LOG-LEAKAGE]** services/billing.ts:6 — `console.log("Premium check for user:", user)` writes the full user object (including email) to logs. Use `logger.info("billing.premium_check", { user_id: userId })` from the structured logger. (Inline-eligible once the structured logger import is added; surfaced here pending that one-line addition.)
+### Findings
+
+| Severity | Count | Inline anchors |
+|---|---|---|
+| Must-fix | 3 | `IN1 services/billing.ts:5` · `IN2 api/admin.ts:42` · `SE2 sdk/index.ts:7` |
+| Should-fix | 1 | `DA3 migrations/0042_add_user_tier.sql:1` |
+| Nits | 1 | `SC7 services/billing.ts:6` |
 
 ### Delegations
 - Run `/ship-tested-code` on this PR — production code added in `services/billing.ts` and `api/admin.ts` (52 net added lines) with no test files modified. TS1 triggered.
 - Run `/ship-debugged-code` on PR #4811 — description mentions `fixes #4801` but no regression test was added. TS2 triggered. (Once the regression test exists, return here for re-review.)
 
 ### Open threads (still need author response)
-- `api/admin.ts:42` (Thread C, opened 1 day ago — "Should this require admin auth?") — matches SC1-AUTH-MISSING from this scan. The original framing is correct; the author acknowledged ("Yes, will add.") but the code has not been updated. This thread is what blocks the decision matrix from approving — same severity as SC1 (priority 1) so the unresolved concern drives REQUEST_CHANGES.
+- `api/admin.ts:42` (Thread C, opened 1 day ago — "Should this require admin auth?") — matches SC1-AUTH-MISSING from this scan. The original framing is correct; the author acknowledged ("Yes, will add.") but the code has not been updated. This thread is what blocks the decision matrix from approving — same severity as SC1 (priority 1) so the unresolved concern drives `Changes requested`.
 
 ### Comment lifecycle
-- 1 won't-fix (Thread A: ENUM-vs-TEXT typing, deferred to #4820)
-- 1 outdated (Thread B: prior version of services/billing.ts)
-- 1 open (Thread C: admin auth — surfaced above, not re-raised as a fresh finding)
-- Suppressed: 2 findings already discussed in earlier review (DA5 TYPE-PRECISION → won't-fix Thread A; SC1 AUTH-MISSING → routed to Open threads above instead of re-emitted).
 
-### Stale comments needing reply
-- (none)
+| State | Count |
+|---|---|
+| Resolved | 0 |
+| Won't-fix | 1 |
+| Outdated | 1 |
+| Possibly addressed | 0 |
+| Stale | 0 |
+| Open | 1 |
 
-### What's Good
+Suppressed 2 findings already discussed in earlier review (DA5 TYPE-PRECISION → won't-fix Thread A; SC1 AUTH-MISSING → routed to Open threads above instead of re-emitted).
+
+### What's solid
 
 - The PR description is excellent — clear scope, explicit out-of-scope items with ticket references, and links the bug being fixed. This is what makes Thread A's won't-fix marker reliable and lets the skill suppress a duplicate finding confidently.
 - The new feature is structured behind a clear flag gate (the `tier` column is the source of truth), which makes rollout reversible by simply leaving the column nullable until backfill completes.
@@ -193,8 +205,8 @@ Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 ge
 ```
 Will post 1 review with:
   - 4 inline comments  (1 with a suggestion fence — IN1; 3 prose-only)
-  - 1 finding in "Suggestions (improve when convenient)" (SC7, summary body only)
-  - Decision: REQUEST_CHANGES
+  - 1 Nit (SC7) inline-anchored in the Findings table (deferred to a follow-up commit, no inline comment yet)
+  - Verdict: Changes requested  (decision: REQUEST_CHANGES)
 
   gh api -X POST repos/ship-it-ops/billing-service/pulls/4811/reviews            (create pending review)
   gh api -X POST .../reviews/${REVIEW_ID}/comments × 4                             (one per Critical/Important finding)
@@ -207,14 +219,15 @@ Proceed? Type "yes" to submit, "edit" to revise the body, "no" to abort.
 
 ## What this example demonstrates
 
-1. **Inline-first layout**: every Critical and Important finding ships as an inline review comment anchored at `file:line`. The summary body is a scannable index pointing at the inline comments — never a duplicate of their bodies.
-2. **One `suggestion` fence**: IN1 qualifies because the fix is a single, contiguous edit that does not require any other change to compile. The other three Critical/Important findings keep the fix as prose because each needs an adjacent edit a `suggestion` fence cannot cover (new import, decision between two valid approaches, multi-step migration spanning deploys).
-3. **Decision is decisive**: REQUEST_CHANGES, with a one-line reason and substantive Confidence section.
-4. **Multi-persona findings**: SC (log leakage), DA (migration), IN (timeout, observability), SE (contract drift), TS (delegation only). For a worked example with the FE persona engaged, see `examples/fe-review-example.md`.
-5. **Strict priority tiering**: Critical = priority 1-2, Important = 3-5, Suggestions = 6-7. The example follows this rule even where the resulting tier is stricter than gut feel (SC7 LOG-LEAKAGE in Suggestions, IN2 OBSERVABILITY-GAP in Critical). Consistency across reviews matters more than per-finding intuition.
-6. **Won't-fix suppression**: a candidate DA5-TYPE-PRECISION finding (the TEXT column could be ENUM) is *not* emitted because Thread A already marked the typing concern won't-fix and tracked it in #4820. Dropped silently into the suppressed-finding counter.
-7. **Open-thread suppression**: the admin-auth concern (SC1) is *also* not re-raised as a fresh inline finding — Thread C already covers it. Instead, the thread is surfaced under "Open threads (still need author response)" with its original framing, and its priority-1 weight still drives the decision matrix to REQUEST_CHANGES. This is the difference between "duplicate the team's existing work" and "leverage it."
-8. **Lifecycle visibility**: every lifecycle state present is named, with counts. Suppression count is explicit (2 here).
-9. **Delegations are separate from findings**: TS1 and TS2 are surfaced but don't count toward the decision.
-10. **"What's Good" is substantive**: not generic. Names what the author did well that makes the reviewer's job easier.
-11. **Submission preview shows the exact `gh` commands** — no opaque "I will submit a review"; the reviewer sees what's about to happen, including the inline-comment count and how many `suggestion` fences are included.
+1. **Inline-first layout**: every Must-fix and Should-fix finding ships as an inline review comment anchored at `file:line`. The summary body's Findings table is a scannable index pointing at the inline comments — never a duplicate of their bodies.
+2. **One `suggestion` fence**: IN1 qualifies because the fix is a single, contiguous edit that does not require any other change to compile. The other three Must-fix/Should-fix findings keep the fix as prose because each needs an adjacent edit a `suggestion` fence cannot cover (new import, decision between two valid approaches, multi-step migration spanning deploys).
+3. **Verdict is decisive**: `Changes requested`, with a one-line reason and substantive Confidence section. The formal `REQUEST_CHANGES` keyword is preserved in the JSON output and exit code.
+4. **Personas-activated table makes scope visible at a glance**: SE, SC, IN, DA, TS all ran; FE skipped because there's no TSX/JSX in the diff. A reviewer can see which lenses were applied before reading any finding.
+5. **Multi-persona findings**: SC (log leakage), DA (migration), IN (timeout, observability), SE (contract drift), TS (delegation only). For a worked example with the FE persona engaged, see `examples/fe-review-example.md`.
+6. **Strict severity tiering**: Must-fix = priority 1-2, Should-fix = 3-5, Nits = 6-7. The example follows this rule even where the resulting tier is stricter than gut feel (SC7 LOG-LEAKAGE in Nits, IN2 OBSERVABILITY-GAP in Must-fix). Consistency across reviews matters more than per-finding intuition.
+7. **Won't-fix suppression**: a candidate DA5-TYPE-PRECISION finding (the TEXT column could be ENUM) is *not* emitted because Thread A already marked the typing concern won't-fix and tracked it in #4820. Dropped silently into the suppressed-finding counter.
+8. **Open-thread suppression**: the admin-auth concern (SC1) is *also* not re-raised as a fresh inline finding — Thread C already covers it. Instead, the thread is surfaced under "Open threads (still need author response)" with its original framing, and its priority-1 weight still drives the decision matrix to `Changes requested`. This is the difference between "duplicate the team's existing work" and "leverage it."
+9. **Comment-lifecycle table** lives separately from the Findings table — distinct concepts (thread states vs. severity counts), distinct surfaces. Suppression count is explicit (2 here) as a trailing line.
+10. **Delegations are separate from findings**: TS1 and TS2 are surfaced but don't count toward the verdict.
+11. **"What's solid" is substantive**: not generic. Names what the author did well that makes the reviewer's job easier.
+12. **Submission preview shows the exact `gh` commands** — no opaque "I will submit a review"; the reviewer sees what's about to happen, including the inline-comment count and how many `suggestion` fences are included.

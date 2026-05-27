@@ -78,11 +78,9 @@ Every one of those bullet points as a separate finding from the SE persona. The 
 
 ## What this skill produces instead
 
+In the summary body's `Findings` table, no Must-fix or Should-fix row anchors point at `services/orders.ts`. SE has no PR-shaped finding to emit for this file. Instead it emits a delegation:
+
 ```
-### Important (should fix)
-
-- (no SE findings on services/orders.ts in this severity tier)
-
 ### Delegations
 
 - Run `/ship-clean-code` on `services/orders.ts` — the refactor introduces multiple file-level concerns (naming, SRP, magic numbers, logging, DRY, comment quality) that `ship-clean-code` has the right rubric for. After the cleanup, return here for a final PR-level review.

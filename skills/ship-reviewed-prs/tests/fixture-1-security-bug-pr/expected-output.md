@@ -34,33 +34,46 @@ Verify after applying: `curl -X POST localhost:3000/api/users/123/upgrade-tier -
 ## Summary body (posted as the review body)
 
 ```
-## PR Review: #5012 — Add tier-upgrade endpoint
+## PR Review — #5012 `Add tier-upgrade endpoint`
 
-### Decision: 🛑 REQUEST_CHANGES
+**Verdict: Changes requested**
 
 ### Confidence
-Reviewed 1 file (api/users.ts). No conditional personas activated (no schema, no infra files). No existing review threads. CI is green. The critical security finding is unambiguous: a new state-changing endpoint added without auth.
+Reviewed 1 file (api/users.ts). No existing review threads. CI is green. The Must-fix security finding is unambiguous: a new state-changing endpoint added without auth.
 
-### 🛑 Critical (must fix before merge) — see inline comments
-- **[SC1-AUTH-MISSING]** api/users.ts:14 — *see inline comment* (suggestion attached)
+### Personas activated
 
-### Important (should fix)
+| Persona | Status | Reason |
+|---|---|---|
+| SE | ✅ pass | new route follows the existing pattern; no contract drift |
+| SC | ✅ active | new state-changing endpoint without auth middleware |
+| IN | ✅ pass | IN-light — no infra files touched |
+| DA | ⏭ skip | no schema/migration touched |
+| FE | ⏭ skip | no TSX/JSX in diff |
+| TS | ✅ pass | under TS1 threshold (< 30 net lines added) |
 
-- (none)
+### Findings
 
-### Suggestions (improve when convenient)
-
-- (none)
-
-### Delegations
-
-- (none — no test gap signal because this PR adds < 30 net lines)
+| Severity | Count | Inline anchors |
+|---|---|---|
+| Must-fix | 1 | `SC1 api/users.ts:14` |
+| Should-fix | 0 | — |
+| Nits | 0 | — |
 
 ### Comment lifecycle
-- 0 resolved | 0 outdated | 0 won't-fix | 0 possibly addressed | 0 stale | 0 open
-- Suppressed: 0 findings.
 
-### What's Good
+| State | Count |
+|---|---|
+| Resolved | 0 |
+| Won't-fix | 0 |
+| Outdated | 0 |
+| Possibly addressed | 0 |
+| Stale | 0 |
+| Open | 0 |
+
+Suppressed 0 findings.
+
+### What's solid
 
 - The new endpoint follows the existing route pattern (path style, response shape).
 - The endpoint correctly uses the project's `db.users.update` helper rather than rolling its own query — no SQL injection risk on this surface.
@@ -73,7 +86,7 @@ Reviewed 1 file (api/users.ts). No conditional personas activated (no schema, no
 ```
 Will post 1 review with:
   - 1 inline comment  (1 with a suggestion fence — SC1)
-  - Decision: REQUEST_CHANGES
+  - Verdict: Changes requested  (decision: REQUEST_CHANGES)
 
   gh api -X POST repos/acme/billing/pulls/5012/reviews                    (create pending review)
   gh api -X POST .../reviews/${REVIEW_ID}/comments × 1                      (inline comment on api/users.ts:14)

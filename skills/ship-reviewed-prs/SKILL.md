@@ -83,7 +83,7 @@ A later commit touching the same file:line as an open comment is a heuristic, no
 ### 8. Surface confidence, not opinion.
 The output includes a Confidence section that names what was reviewed, what was *not* reviewed (out of scope, large generated files, unreviewable binaries), and what's residual risk. A confident "REQUEST_CHANGES" is paired with the specific finding that drove the decision.
 
-### 9. Always include "What's Good".
+### 9. Always include "What's solid".
 Reviews are not just findings. Naming substantive positive observations — sound architectural decisions, good test coverage, clean migration plans — keeps the review collaborative and helps the author trust the critical findings.
 
 ### 10. Submission is a separate step from analysis.
@@ -227,7 +227,7 @@ The skill runs as a hybrid: always-on personas in-context, conditional personas 
 
 Every Critical and Important finding that has a concrete `file:line` target **MUST** be posted as an inline review comment via the pending-review protocol below. Posting all findings as a single summary blob is a regression — the developer cannot see feedback in the diff and cannot accept fixes with one click. A finding without a precise line (architectural concern, cross-file pattern) lives in the summary body only. Suggestion-tier (P6/P7) findings post inline **when** they include a mechanical fix; otherwise they appear in the summary body.
 
-The summary body is an **index, not a duplicate**. It carries Decision, Confidence, Comment Lifecycle, What's Good, and a one-line bullet per inline finding (`[SC1-AUTH-MISSING] api/users.ts:42 — see inline comment`). It does NOT repeat the full inline body.
+The summary body is an **index, not a duplicate**. It carries Verdict, Confidence, Personas activated, Findings (severity counts + inline anchors), Delegations, Comment lifecycle, and What's solid. It does NOT repeat the full inline body — each Critical/Important finding lives in its inline comment, and the Findings table's `Inline anchors` column points readers there.
 
 Use the GitHub pending-review protocol so inline comments and the summary post atomically:
 
@@ -260,7 +260,7 @@ When an inline finding carries a small, self-contained, mechanical fix, embed it
 In local mode, after computing the decision and rendering the draft:
 
 ```
-Decision: REQUEST_CHANGES
+Verdict: Changes requested
 3 inline comments will be posted on: api/users.ts:42, services/billing.ts:118, migrations/0042.sql:5
 
 Submission preview:
@@ -342,24 +342,32 @@ suggestion.
 ### Summary body (posted as review body)
 
 ```
-## PR Review: #<n> — <title>
+## PR Review — #<n> `<title>`
 
-### Decision: ✅ APPROVE | 🛑 REQUEST_CHANGES | 💬 COMMENT
+**Verdict: LGTM | LGTM (with caveats) | Changes requested | Comment**
 
 ### Confidence
 <2-4 sentences: what was reviewed, what was not (out of scope, large generated
-files), what's the residual risk, why this decision is the right one.>
+files), what's the residual risk, why this verdict is the right one.>
 
-### 🛑 Critical (must fix before merge) — see inline comments
-- **[SC1-AUTH-MISSING]** api/users.ts:42 — *see inline comment*
-- **[DA1-SCHEMA-BREAK]** migrations/0042.sql:5 — *see inline comment*
+### Personas activated
 
-### ⚠️ Important (should fix) — see inline comments
-- **[IN2-OBSERVABILITY-GAP]** services/billing.ts:118 — *see inline comment*
-- **[SE2-CONTRACT-DRIFT]** sdk/index.ts:7 — *see inline comment*
+| Persona | Status | Reason |
+|---|---|---|
+| SE | ✅ active / ✅ pass / ⏭ skip | <one-line reason, lowercase noun phrase> |
+| SC | ✅ active / ✅ pass / ⏭ skip | <one-line reason> |
+| IN | ✅ active / ✅ pass / ⏭ skip | <light or deep, plus the trigger> |
+| DA | ✅ active / ✅ pass / ⏭ skip | <one-line reason> |
+| FE | ✅ active / ✅ pass / ⏭ skip | <one-line reason> |
+| TS | ✅ active / ✅ pass / ⏭ skip | <one-line reason> |
 
-### Suggestions (improve when convenient)
-- **[IN7-PERF-HOTPATH]** services/search.ts:88 — *see inline comment* (or full body here when not inline)
+### Findings
+
+| Severity | Count | Inline anchors |
+|---|---|---|
+| Must-fix | <n> | `SC1 api/users.ts:42` · `DA1 migrations/0042.sql:5` |
+| Should-fix | <n> | `IN2 services/billing.ts:118` · `SE2 sdk/index.ts:7` |
+| Nits | <n> | `IN7 services/search.ts:88` |
 
 ### Findings without inline anchor
 - **[SE4-MODULE-SHAPE]** services/billing — `BillingClient`, `BillingCache`,
@@ -371,13 +379,22 @@ files), what's the residual risk, why this decision is the right one.>
 - Run `/ship-clean-code` on `services/billing.ts` (naming/readability concerns deferred).
 
 ### Comment lifecycle
-- 3 resolved | 2 won't-fix | 1 outdated | 1 possibly addressed in commit <sha> — please confirm | 1 open
-- Suppressed: 4 findings already discussed in earlier review.
+
+| State | Count |
+|---|---|
+| Resolved | 3 |
+| Won't-fix | 2 |
+| Outdated | 1 |
+| Possibly addressed | 1 |
+| Stale | 0 |
+| Open | 1 |
+
+Suppressed 4 findings already discussed in earlier review.
 
 ### Stale comments needing reply
 - `services/auth.ts:30` — opened 23 days ago, no author response.
 
-### What's Good
+### What's solid
 - Migration includes backfill + rollback plan in PR body.
 - BillingClient is constructor-injected, replacing a static singleton.
 - New tests use the standard factory pattern.
@@ -389,7 +406,7 @@ files), what's the residual risk, why this decision is the right one.>
 Will post 1 review with:
   - 4 inline comments  (2 with suggestion fences, 2 prose-only)
   - 1 finding in "Findings without inline anchor"
-  - Decision: REQUEST_CHANGES
+  - Verdict: Changes requested  (decision: REQUEST_CHANGES)
 
   gh api ... (create pending review)
   gh api ... (post 4 inline comments)
@@ -398,18 +415,26 @@ Proceed? yes / edit / no
 ```
 
 Rules for the output:
-- **Inline comments are mandatory** for every Critical and Important finding with a `file:line` target. The summary body's bullets are pointers, not duplicates.
-- **Decision is always present.** No "I'm not sure" — the matrix decides.
-- **Decision line carries one verdict glyph.** Prefix the verdict with `✅` for APPROVE, `🛑` for REQUEST_CHANGES, `💬` for COMMENT. The `Critical` and `Important` section headers prepend `🛑` and `⚠️` respectively, **only when the section has at least one finding** — empty (`(none)`) sections keep a plain header so the glyph always means "this needs attention." No emoji elsewhere in the body, on per-finding bullets, or in the JSON output.
+- **Inline comments are mandatory** for every Critical and Important finding with a `file:line` target. The summary body's Findings table is a pointer index, not a duplicate of the inline bodies.
+- **Verdict is always present** as a bold paragraph (not a heading), with one of the four friendly labels. No "I'm not sure" — the matrix decides.
+- **Friendly verdict label, formal decision keyword.** The markdown surface uses `LGTM` / `LGTM (with caveats)` / `Changes requested` / `Comment`; the JSON output and exit codes keep the formal `APPROVE` / `REQUEST_CHANGES` / `COMMENT` keywords. Mapping:
+  - clean APPROVE (no findings of any tier, green CI, no open or possibly-addressed threads) → `LGTM`
+  - APPROVE with caveats (suggestion-tier findings, pending CI, or non-blocking advisory text) → `LGTM (with caveats)`
+  - REQUEST_CHANGES → `Changes requested`
+  - COMMENT → `Comment`
 - **Confidence section is always present** and substantive (not "looks fine").
-- **What's Good is always present** with concrete observations.
-- **Delegations are separate** from findings and do not affect the decision.
-- **Comment lifecycle line is always present**, even if everything is empty (show zeros).
-- **"Findings without inline anchor" is omitted** when no such findings exist; otherwise listed last among the finding sections.
-- Tag every finding with its priority code (SE1, SC2, etc.).
-- Include specific file:line.
+- **Personas activated table is always rendered with all six rows** in the canonical SE / SC / IN / DA / FE / TS order. Status is exactly one of `✅ active` (ran and produced ≥1 finding), `✅ pass` (ran and produced 0 findings), `⏭ skip` (did not run — conditional trigger missed or disabled by override). Reason is a short lowercase noun phrase, no trailing period (e.g. `core code change`, `no schema/migration touched`, `IN-light only — no infra files`). The persona codes are fixed: there is no separate `A11y` persona; a11y concerns belong to `FE`.
+- **Findings table is always rendered** with the three rows Must-fix / Should-fix / Nits even when their counts are zero (consistent shape across PRs). Severity mapping is fixed: `Must-fix` = priority 1-2, `Should-fix` = priority 3-5, `Nits` = priority 6-7. Inline anchors use `<persona-id> path:line` separated by ` · ` (middle dot, spaces). If a tier exceeds ~5 inline anchors, switch the cell from middle-dot separators to `<br>` line breaks. If a cell would exceed ~250 chars, truncate to the top-N (by priority) and append ` · +N more`; full list always available in `--json`.
+- **What's solid is always present** with concrete observations.
+- **Delegations are separate** from findings and do not affect the verdict.
+- **Comment lifecycle table is always present**, even if every count is zero. The Findings table (severity counts) and Comment lifecycle table (thread states) are distinct surfaces; do not conflate them under a shared "lifecycle counts" heading.
+- **"Findings without inline anchor" is omitted** when no such findings exist; otherwise listed immediately after the Findings table. Anchorless findings still contribute to the Findings table's `Count` cell for their tier; they just have no entry in `Inline anchors`.
+- **"Stale comments needing reply" is omitted** when there are zero stale OPEN threads.
+- **"Delegations" is omitted** when there are zero delegations.
+- Tag every finding with its priority code (SE1, SC2, etc.) inside the Findings-table anchors and in the inline-comment bodies.
+- Include specific file:line in the Findings table for every inline-anchored finding.
 - Every inline finding includes a concrete fix — either a `suggestion` fence (when it qualifies per the rules above) or prose.
-- More than 10 inline findings: show top 10 strictly ordered by priority. Never suppress *1 findings due to the cap. Remaining are summarized in the body as a count by tier ("+ N more findings: P6 readability × A, P7 style × B"). Reviewers who want the complete list re-run with `--json` to get the unfiltered finding array.
+- More than 10 inline findings: post the top 10 strictly ordered by priority. Never suppress *1 findings due to the cap. Remaining are reflected in the Findings-table `Count` cell (the count is true; the anchors are truncated per the overflow rule). Reviewers who want the complete list re-run with `--json` to get the unfiltered finding array.
 
 ## Pragmatism Guidelines
 

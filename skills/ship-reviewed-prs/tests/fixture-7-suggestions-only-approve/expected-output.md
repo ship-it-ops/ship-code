@@ -39,24 +39,31 @@ ask the author/oncall for human judgment on disputed findings.
 
 ---
 
-## PR Review: #2200 — docs(contributing): add slash-command authoring guidance
+## PR Review — #2200 `docs(contributing): add slash-command authoring guidance`
 
-### Decision: ✅ APPROVE
+**Verdict: LGTM (with caveats)**
 
 ### Confidence
-Reviewed CONTRIBUTING.md (+28 lines, 0 deletions) as a pure docs-only PR. SC ran a full pass for secret/URL leakage — clean. SE ran a technical-accuracy pass against the rest of the contributing guide. IN/DA/FE/TS did not activate. One P6 suggestion found. CI green. APPROVE with a Suggestions caveat — the finding is advisory and does not block the verdict per the updated decision matrix.
+Reviewed CONTRIBUTING.md (+28 lines, 0 deletions) as a pure docs-only PR. SC ran a full pass for secret/URL leakage — clean. SE ran a technical-accuracy pass against the rest of the contributing guide. One P6 suggestion found. CI green. The verdict is `LGTM (with caveats)` because the lone finding is a Nit (advisory) and does not block the formal APPROVE per the updated decision matrix.
 
-### Critical (must fix before merge)
+### Personas activated
 
-- (none)
+| Persona | Status | Reason |
+|---|---|---|
+| SE | ✅ active | docs technical-accuracy pass surfaced a link-rot Nit |
+| SC | ✅ pass | no leaked secrets / URLs / env-var names |
+| IN | ⏭ skip | docs-only PR |
+| DA | ⏭ skip | docs-only PR |
+| FE | ⏭ skip | docs-only PR |
+| TS | ⏭ skip | docs-only PR |
 
-### Important (should fix)
+### Findings
 
-- (none)
-
-### Suggestions (improve when convenient)
-
-- **[SE6-LINK-ROT-RISK]** CONTRIBUTING.md:108 — *see inline comment* (suggestion attached)
+| Severity | Count | Inline anchors |
+|---|---|---|
+| Must-fix | 0 | — |
+| Should-fix | 0 | — |
+| Nits | 1 | `SE6 CONTRIBUTING.md:108` |
 
 ### Delegations
 
@@ -64,10 +71,18 @@ Reviewed CONTRIBUTING.md (+28 lines, 0 deletions) as a pure docs-only PR. SC ran
 
 ### Comment lifecycle
 
-- 0 resolved | 0 outdated | 0 won't-fix | 0 possibly addressed | 0 stale | 0 open
-- Suppressed: 0 findings already discussed in earlier review.
+| State | Count |
+|---|---|
+| Resolved | 0 |
+| Won't-fix | 0 |
+| Outdated | 0 |
+| Possibly addressed | 0 |
+| Stale | 0 |
+| Open | 0 |
 
-### What's Good
+Suppressed 0 findings already discussed in earlier review.
+
+### What's solid
 
 - The PR description names the downstream incident that motivated this section, which gives the docs immediate operational grounding for future plugin authors.
 - The `disable-model-invocation: true` → `commands/` mandatory connection is a non-obvious invariant; capturing it here is exactly the kind of thing that prevents future repeats of the original bug.
@@ -89,9 +104,9 @@ gh api -X POST .../reviews/$REVIEW_ID/events
 
 ## What this fixture demonstrates
 
-1. **Suggestions do not block APPROVE** — the updated matrix treats P6/P7 as advisory caveats inside the APPROVE body rather than verdict downgrades.
-2. **Suggestion-tier findings post inline when they're mechanical** — SE6 here is a single-line textual edit (plain prose → markdown link) so it qualifies for both the inline comment and the `suggestion` fence. Suggestion-tier findings that require an adjacent edit (a new import, a multi-step refactor) stay in the summary body's Suggestions section instead.
+1. **Nits do not block LGTM** — the updated matrix treats P6/P7 (Nits) as advisory and demotes the friendly verdict to `LGTM (with caveats)` rather than degrading the formal decision to COMMENT.
+2. **Nit-tier findings still get inline anchors when they're mechanical** — SE6 here is a single-line textual edit (plain prose → markdown link) so it qualifies for both the inline comment and the `suggestion` fence. Nit-tier findings that require an adjacent edit (a new import, a multi-step refactor) live in the Findings table count but not in the anchors column.
 3. **"Awaiting CI" caveat is absent** because CI is green; caveat sections are only emitted when their condition holds.
-4. **APPROVE with inline findings uses the pending-review protocol** — not the simpler `gh pr review --approve --body` form (that's reserved for zero-inline APPROVEs per reference.md §6).
-5. **`--auto-approve` would NOT have been honored here** even on a green-path APPROVE, because suggestion findings exist; the local user would have been prompted to confirm submit.
-6. **Exit code 0** in CI mode — downstream gating sees a clean pass; the suggestion is a body-only signal.
+4. **LGTM (with caveats) + inline findings uses the pending-review protocol** — not the simpler `gh pr review --approve --body` form (that's reserved for zero-inline APPROVEs per reference.md §6).
+5. **`--auto-approve` would NOT have been honored here** even on a green-path APPROVE, because Nit findings exist; the local user would have been prompted to confirm submit.
+6. **Exit code 0** in CI mode — downstream gating sees a clean pass; the Nit is a body-only signal.

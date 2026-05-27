@@ -9,57 +9,67 @@ Each finding is annotated with `# Copilot finding #N` to cross-check coverage ag
 ---
 
 ```
-## PR Review: #47 — Add support for graph editing
+## PR Review — #47 `Add support for graph editing`
 
-### Decision: 🛑 REQUEST_CHANGES
+**Verdict: Changes requested**
 
 ### Confidence
-Reviewed 29 files (compressed diff of 56 changed files; pnpm-lock.yaml skipped as generated). Conditional FE persona activated (TSX-heavy diff with new aria-* attributes, new `import './styles.css'` in non-entry module, .changeset/*.md files). Conditional DA persona did not activate. IN deep mode did not activate. SC scanned all files; flagged one SC3 on `.claude/scheduled_tasks.lock`. CI is green. Zero existing review threads. The decision is REQUEST_CHANGES because FE produced five *1-tier findings on the GraphEditorCanvas state-management surface plus an ARIA contract break in InlineEdit.
+Reviewed 29 files (compressed diff of 56 changed files; pnpm-lock.yaml skipped as generated). SC scanned all files; flagged one SC3 on `.claude/scheduled_tasks.lock`. CI is green. Zero existing review threads. The verdict is `Changes requested` because FE produced five *1-tier findings on the GraphEditorCanvas state-management surface plus an ARIA contract break in InlineEdit.
 
 Generated/vendored skipped: 1 (pnpm-lock.yaml).
 
-### 🛑 Critical (must fix before merge)
+### Personas activated
 
-- **[FE1-A11Y-CONTRACT-BROKEN] packages/ui/src/components/InlineEdit/InlineEdit.tsx:234**: `aria-errormessage` references `${rest.id ?? 'inline-edit'}-error`, but no element with that id is rendered anywhere in the component. The error string from `validate()` lives only in `error` state — sighted users see the red border, AT users get a dangling ARIA reference. → Render the error adjacent to the input: `{error && <p id={`${rest.id ?? 'inline-edit'}-error`} role="alert" className="text-err mt-1 text-[11px]">{error}</p>}` inside a fragment with the `<input>`. # Copilot finding #3
+| Persona | Status | Reason |
+|---|---|---|
+| SE | ✅ pass | FE owns the TSX-shaped concerns; no PR-shaped contract drift |
+| SC | ✅ active | committed runtime lock file (SC3) |
+| IN | ✅ pass | IN-light — no infra files touched |
+| DA | ⏭ skip | no schema/migration touched |
+| FE | ✅ active | TSX-heavy diff, new aria-* attributes, global-CSS import in non-entry module |
+| TS | ✅ pass | tests added alongside production code; ratio within TS1 threshold |
 
-- **[FE1-A11Y-CONTRACT-BROKEN] packages/ui/src/components/InlineEdit/InlineEdit.tsx:223**: When the component swaps from display mode (`<button aria-label="Edit ${value}">`) to edit mode (`<input>`), the display element's accessible name does not carry over. Screen readers announce nothing meaningful for the input that just appeared. → Apply the same computed label to the input: `<input aria-label={`Editing ${value}`} ...>`. # Copilot finding #2
+### Findings
 
-- **[FE2-CONTROLLED-STATE-DESYNC] packages/graph-editor/src/GraphEditorCanvas.tsx:175**: `useEffect([elements])` re-syncs internal state from the `elements` prop and calls `history.reset()` on every change. Consumers using the controlled-elements pattern the docs examples demonstrate (`elements` updated in response to `onNodeMove`/`onConnect`/deletes) will see history cleared after every edit — undo/redo is unusable. → Either make `elements` uncontrolled (`initialElements` + explicit `resetKey` prop) or stop resetting history on routine prop updates. # Copilot finding #5
+| Severity | Count | Inline anchors |
+|---|---|---|
+| Must-fix | 7 | `FE1 packages/ui/src/components/InlineEdit/InlineEdit.tsx:234`<br>`FE1 packages/ui/src/components/InlineEdit/InlineEdit.tsx:223`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:175`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:231`<br>`FE2 packages/graph-editor/src/GraphEditorCanvas.tsx:331`<br>`FE3 packages/graph-editor/src/GraphEditorCanvas.tsx:387`<br>`FE3 packages/graph-editor/src/GraphEditorCanvas.tsx:397` |
+| Should-fix | 4 | `FE4 packages/ui/src/components/InlineEdit/InlineEdit.tsx:86`<br>`FE5 packages/graph-editor/src/GraphEditorCanvas.tsx:34`<br>`FE6 packages/graph-editor/src/MiniMap.tsx:92`<br>`SC3 .claude/scheduled_tasks.lock:1` |
+| Nits | 1 | `FE7 .changeset/add-graph-editor-canvas.md:7` |
 
-- **[FE2-CONTROLLED-STATE-DESYNC] packages/graph-editor/src/GraphEditorCanvas.tsx:231**: `handleConnect` generates the new edge id (`e-${Date.now()}`) internally but `onConnect` emits only `{source, target}` to the consumer. A controlled consumer will create an edge with a different id; internal history/selection/edge-delete events then diverge from the consumer's persisted graph. → Include the generated id in the callback: `onConnect?.({ source, target, id: newEdge.id })`, or accept a `createEdgeId` factory prop. # Copilot finding #7
+The 11 anchors above are posted as inline comments — see the "Inline comments to post" section at the top of this file for the full finding bodies. Headline summaries (mapped 1:1 to the inline comments, with the `# Copilot finding #N` markers used to score coverage against the original missed PR):
 
-- **[FE2-CONTROLLED-STATE-DESYNC] packages/graph-editor/src/GraphEditorCanvas.tsx:331**: `applyCommand('add-node')` calls `onNodeAdd` with only a position, but the internal command stores the full `{id, data, position}`. On undoing a `delete-node`, the consumer cannot restore the same node via `onNodeAdd(position)` alone, so external persistence will desync from the internal graph. → Change the callback contract to include the full node: `onNodeAdd?.(cmd.node)`. # Copilot finding #6
-
-- **[FE3-COMMAND-HISTORY-INCOMPLETE] packages/graph-editor/src/GraphEditorCanvas.tsx:387**: Arrow-key nudges flow through `useGraphEditorKeyboard` and apply via `baseOnNodesChange`, bypassing the `applyCommand` dispatch that drag/click handlers use. `⌘Z` will undo drags but not nudges, and the keyboard path silently corrupts history when interleaved with mouse actions. → Route both through `applyCommand({ kind: 'move-node', from, to })`. # Copilot finding #8
-
-- **[FE3-COMMAND-HISTORY-INCOMPLETE] packages/graph-editor/src/GraphEditorCanvas.tsx:397**: When Delete is pressed with both nodes and edges selected, `deleteSelectedNodes()` records a `delete-node` command whose inverse already restores incident edges, AND `deleteSelectedEdges()` records a separate `delete-edge` for each selected edge. If a selected edge is incident to a selected node, undo re-adds it twice — duplicate edges. → Before pushing `delete-edge` commands, subtract edges already covered by a `delete-node` in this batch. # Copilot finding #9
-
-### ⚠️ Important (should fix)
-
-- **[FE4-NO-OP-PROP-VALUE] packages/ui/src/components/InlineEdit/InlineEdit.tsx:86**: `activate` is typed `'click' | 'focus'` but no implementation branch on `activate === 'focus'` exists; only the `'click'` path triggers `startEdit()`. The prop value is type-system-valid and silently does nothing at runtime. → Either implement focus activation (start edit on `onFocus` when `activate === 'focus'`), or remove `'focus'` from the `Activation` union. # Copilot finding #1
-
-- **[FE5-SSR-GLOBAL-CSS] packages/graph-editor/src/GraphEditorCanvas.tsx:34**: Global CSS imported (`import './styles.css'`) inside a non-entry module. Next.js App Router only permits global CSS imports from `layout.tsx`/`_app.tsx`; consumers on App Router will hit a build error. The package already exports `@ship-it-ui/graph-editor/styles.css` for consumer-side import. → Drop the internal import; document that consumers must import the stylesheet once from their entry module. # Copilot finding #4
-
-- **[FE6-RANGE-CLAMP-MISSING] packages/graph-editor/src/MiniMap.tsx:92**: `viewportRect.width = br.x - tl.x` and `height = br.y - tl.y` are not clamped to [0,1]. When the viewport is panned past the graph bbox, these can exceed 1. `GraphMinimap` expects normalized 0..1 fractions, so the rendered rect extends past the minimap frame. → Clamp width/height using the already-clamped top-left: `width: Math.max(0, Math.min(1, br.x)) - Math.max(0, Math.min(1, tl.x))`, same for height. # Copilot finding #10
-
-- **[SC3-SECRET-LEAK] .claude/scheduled_tasks.lock:1**: Ephemeral runtime lock file accidentally committed. The file is created and deleted at runtime by a scheduled-task runner; it embeds a PID and timestamp so it will conflict on every machine. → Add `.claude/*.lock` to `.gitignore` and drop this file from the PR.
-
-### Suggestions (improve when convenient)
-
-- **[FE7-CHANGESET-DRIFT] .changeset/add-graph-editor-canvas.md:7**: Changeset body says keyboard handling, undo/redo, mini-map, and the +Add palette "land in the next iteration", but those behaviors are implemented in this PR (`keyboard.ts`, `history.ts`, `MiniMap.tsx`, the `applyCommand({ kind: 'add-node' })` path). The sibling changeset `add-graph-editor-behaviors.md` already covers the behaviors, so this one duplicates the version bump and ships misleading release notes. → Either remove this changeset or rewrite the body to describe only what's actually new in the canvas surface. # Copilot finding #11 (changeset accuracy)
+- **[FE1-A11Y-CONTRACT-BROKEN] InlineEdit.tsx:234** — `aria-errormessage` references a `${id}-error` element that is not rendered; AT users get a dangling reference. (#3)
+- **[FE1-A11Y-CONTRACT-BROKEN] InlineEdit.tsx:223** — display-mode `aria-label` is not carried over when swapping to edit-mode `<input>`. (#2)
+- **[FE2-CONTROLLED-STATE-DESYNC] GraphEditorCanvas.tsx:175** — `useEffect([elements])` calls `history.reset()` on every prop change; controlled consumers lose undo. (#5)
+- **[FE2-CONTROLLED-STATE-DESYNC] GraphEditorCanvas.tsx:231** — `onConnect` emits `{source,target}` without the internally-generated edge id; persisted-vs-internal id diverges. (#7)
+- **[FE2-CONTROLLED-STATE-DESYNC] GraphEditorCanvas.tsx:331** — `onNodeAdd` callback drops `{id,data}`; undo-after-delete cannot restore. (#6)
+- **[FE3-COMMAND-HISTORY-INCOMPLETE] GraphEditorCanvas.tsx:387** — arrow-key nudges bypass `applyCommand`; `⌘Z` undoes drags but not nudges. (#8)
+- **[FE3-COMMAND-HISTORY-INCOMPLETE] GraphEditorCanvas.tsx:397** — Delete pushes both `delete-node` and `delete-edge` for incident edges; undo re-adds duplicates. (#9)
+- **[FE4-NO-OP-PROP-VALUE] InlineEdit.tsx:86** — `activate: 'click' | 'focus'` but only `'click'` is implemented. (#1)
+- **[FE5-SSR-GLOBAL-CSS] GraphEditorCanvas.tsx:34** — `import './styles.css'` in a non-entry module breaks Next.js App Router consumers. (#4)
+- **[FE6-RANGE-CLAMP-MISSING] MiniMap.tsx:92** — viewport width/height not clamped to [0,1]; rect overshoots minimap frame. (#10)
+- **[SC3-SECRET-LEAK] .claude/scheduled_tasks.lock:1** — ephemeral runtime lockfile committed.
+- **[FE7-CHANGESET-DRIFT] add-graph-editor-canvas.md:7** — changeset says behaviors land "next iteration" but they ship in this PR. (#11)
 
 ### Delegations
 
 - (none — tests were added alongside production code so TS1 does not fire. Note: `InlineEdit.test.tsx` covers display + edit modes only; the validation-error render path is uncovered. Run `/ship-tested-code` for test-coverage depth.)
 
 ### Comment lifecycle
-- 0 resolved | 0 outdated | 0 won't-fix | 0 possibly addressed | 0 stale | 0 open
-- Suppressed: 0 findings.
 
-### Stale comments needing reply
-- (none)
+| State | Count |
+|---|---|
+| Resolved | 0 |
+| Won't-fix | 0 |
+| Outdated | 0 |
+| Possibly addressed | 0 |
+| Stale | 0 |
+| Open | 0 |
 
-### What's Good
+Suppressed 0 findings.
+
+### What's solid
 
 - **Token extraction is clean**: `resolveColorReference` and friends moved intact from `@ship-it-ui/cytoscape` to the new `@ship-it-ui/graph-tokens` package with their full test suites. The cytoscape package re-exports the same surface verbatim; existing consumers see zero behavior change. This is the textbook way to extract a shared dependency.
 - **`useHistory` is implemented with refs, not state**: pushing a command doesn't trigger a render. `inverseOf(delete-node)` correctly restores incident edges via a `batch` command. The history primitive is solid; the issues above are about wiring, not the primitive.
@@ -68,7 +78,7 @@ Generated/vendored skipped: 1 (pnpm-lock.yaml).
 
 ### Submission preview (local mode only)
   gh api -X POST repos/ship-it-ops/ship-it-design/pulls/47/reviews (create pending review)
-  gh api -X POST .../reviews/${REVIEW_ID}/comments × 10 (one per Critical + one per Important)
+  gh api -X POST .../reviews/${REVIEW_ID}/comments × 11 (one per Must-fix + one per Should-fix + the FE7 Nit anchor)
   gh api -X POST .../reviews/${REVIEW_ID}/events -f event=REQUEST_CHANGES -f body=<summary>
 
 Proceed? Type "yes" to submit, "edit" to revise, "no" to abort.
@@ -78,6 +88,6 @@ Proceed? Type "yes" to submit, "edit" to revise, "no" to abort.
 
 1. **Regression coverage** — 10 of 10 finding sites from the original missed PR are now caught by the FE persona plus the existing SC3 lockfile catch. Pre-FE baseline was 2/10 (the aria-errormessage and the lockfile). The fixture is the durable acceptance test for the FE additions.
 2. **FE > SE on TSX dedup** — three FE2 findings on `GraphEditorCanvas.tsx:175/231/331` would have been generic SE2-CONTRACT-DRIFT findings without the FE persona. FE2 framing ("undo unusable in the controlled-elements pattern the docs themselves show") is far more actionable.
-3. **Tier discipline** — FE1/FE2/FE3 are *1 (Critical), FE4/FE5/FE6 are *2 (Important), FE7 is *4 (Suggestions). Even though FE5 (SSR/global-CSS) and FE6 (range clamp) are real production bugs, they sit in Important because they don't necessarily block functional behavior the way a state-desync does. Tier consistency matters more than per-finding intuition.
+3. **Severity discipline** — FE1/FE2/FE3 are *1 (Must-fix), FE4/FE5/FE6 are *2 (Should-fix), FE7 is *4 (Nit). Even though FE5 (SSR/global-CSS) and FE6 (range clamp) are real production bugs, they sit in Should-fix because they don't necessarily block functional behavior the way a state-desync does. Tier consistency matters more than per-finding intuition.
 4. **SC and FE coexist** — SC3 still catches the committed lockfile; FE doesn't replace SC, it adds the missing domain.
-5. **"What's Good" is substantive and frontend-flavored** — token extraction, history primitive correctness, keyboard guard placement, ARIA intent. Names what the author got right, not just what they got wrong.
+5. **"What's solid" is substantive and frontend-flavored** — token extraction, history primitive correctness, keyboard guard placement, ARIA intent. Names what the author got right, not just what they got wrong.

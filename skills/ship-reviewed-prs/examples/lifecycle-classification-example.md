@@ -160,15 +160,28 @@ The SC1 finding still counts toward the decision matrix because it's the same bl
 
 ---
 
-## Summary lifecycle line in the output
+## Summary lifecycle table in the output
 
 ```
 ### Comment lifecycle
-- 1 resolved | 1 outdated | 2 won't-fix | 1 possibly addressed (please confirm) | 1 stale | 17 open (12 match new candidate findings — suppressed as duplicates; 4 need author response; 1 raises SC1-AUTH-MISSING which is the actual blocker)
-- Suppressed: 14 findings already discussed in earlier review.
+
+| State | Count |
+|---|---|
+| Resolved | 1 |
+| Won't-fix | 2 |
+| Outdated | 1 |
+| Possibly addressed | 1 |
+| Stale | 1 |
+| Open | 17 |
+
+Suppressed 14 findings already discussed in earlier review.
 ```
 
+Annotation alongside the table: of the 17 OPEN threads, 12 match new candidate findings (suppressed as duplicates), 4 need author response, and 1 raises SC1-AUTH-MISSING which is the actual blocker.
+
 The 14 suppressed = 1 (Thread 1 match) + 1 (Thread 4 match) + 12 (Threads 7-22 matches) = 14. The threads that don't match candidate findings (3, 5, 6, 23) and the OUTDATED thread don't contribute to suppression counts (they're noted in their own sections).
+
+The Comment-lifecycle table is a separate surface from the Findings table (which counts Must-fix / Should-fix / Nits). Comment lifecycle counts *thread states*; Findings counts *finding severities*. Conflating the two under one heading is the freelance shape that the spec rewrite explicitly avoided.
 
 ---
 
@@ -182,10 +195,10 @@ The 14 suppressed = 1 (Thread 1 match) + 1 (Thread 4 match) + 12 (Threads 7-22 m
 Matrix: any unsuppressed *1 finding → REQUEST_CHANGES.
 
 ```
-### Decision: 🛑 REQUEST_CHANGES
+**Verdict: Changes requested**
 
 ### Confidence
-Reviewed a long-lived PR with 23 existing threads and 47 commits. Aggressive lifecycle suppression applied — 14 candidate findings were dropped as duplicates of existing threads. The one critical finding (SC1-AUTH-MISSING on api/admin/billing.ts) matches Thread 23 from Grace; the same concern is the actual blocker. Confirming addressed items (Thread 5) and engaging with stale Thread 6 would clear the path; the SC1 fix is the critical action.
+Reviewed a long-lived PR with 23 existing threads and 47 commits. Aggressive lifecycle suppression applied — 14 candidate findings were dropped as duplicates of existing threads. The one Must-fix finding (SC1-AUTH-MISSING on api/admin/billing.ts) matches Thread 23 from Grace; the same concern is the actual blocker. Confirming addressed items (Thread 5) and engaging with stale Thread 6 would clear the path; the SC1 fix is the critical action.
 ```
 
 ---
