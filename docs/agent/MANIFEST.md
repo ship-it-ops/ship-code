@@ -1,5 +1,5 @@
 # Agent Context
-Last updated: 2026-05-26 | Total notes: 10
+Last updated: 2026-05-28 | Total notes: 13
 
 <!--
   This file is the index for `docs/agent/`. Agents read it at session start.
@@ -13,9 +13,12 @@ Last updated: 2026-05-26 | Total notes: 10
 ## Decisions
 - [pr-review-installs-plugin-from-pr-head](decisions/pr-review-installs-plugin-from-pr-head.md) | decision | active | core | 2026-05-25 | Dogfood workflow uses local checkout, not main URL
 - [relaxed-approve-decision-matrix](decisions/relaxed-approve-decision-matrix.md) | decision | active | core | 2026-05-25 | APPROVE allowed with suggestions and pending CI caveats
+- [pr-review-table-driven-summary-format](decisions/pr-review-table-driven-summary-format.md) | decision | active | core | 2026-05-26 | Summary body adopts tables and LGTM-style verdict labels
+- [pr-review-auto-resolves-own-threads](decisions/pr-review-auto-resolves-own-threads.md) | decision | active | core | 2026-05-28 | Auto-resolve bot-authored threads when finding no longer fires
 
 ## Patterns
 - [plugin-command-discovery](patterns/plugin-command-discovery.md) | pattern | active | core | 2026-05-25 | Plugin slash commands live at commands/<name>.md namespaced
+- [pr-review-summary-body-layout](patterns/pr-review-summary-body-layout.md) | pattern | active | core | 2026-05-26 | Canonical layout: Verdict + three tables + conditional sections
 
 ## Scars
 - [plugin-without-commands-runs-silently](scars/plugin-without-commands-runs-silently.md) | scar | active | core | 2026-05-25 | Skill-only plugin runs 5 min posting nothing

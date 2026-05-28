@@ -19,8 +19,14 @@ interface ReviewResult {
     is_draft: boolean;
   };
 
-  // The verdict
+  // The verdict — formal keyword for machine consumers
   decision: "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
+  // Friendly label for the markdown surface. Mapping:
+  //   APPROVE + no findings + green CI + no open/addressed threads → "LGTM"
+  //   APPROVE + (suggestions OR pending CI OR advisory caveats)    → "LGTM_WITH_CAVEATS"
+  //   REQUEST_CHANGES                                              → "CHANGES_REQUESTED"
+  //   COMMENT                                                      → "COMMENT"
+  verdict_label: "LGTM" | "LGTM_WITH_CAVEATS" | "CHANGES_REQUESTED" | "COMMENT";
   decision_reason: string;  // Short human-readable summary of why
   ci_state: "green" | "red" | "pending" | "unknown";
   exit_code: 0 | 1 | 2 | 3;
@@ -58,6 +64,8 @@ interface ReviewResult {
     inline_comments_posted: number; // count of inline comments successfully posted to the review
     suggestion_blocks_used: number; // subset of the above that embedded a `suggestion` fence
     inline_comments_failed: number; // count demoted to the summary body after a 404/422 from the comments API
+    threads_resolved: number;       // bot-authored threads auto-resolved this run (Step 4)
+    threads_resolved_reopened: number; // bot-authored threads skipped from auto-resolve because a human un-resolved a prior bot resolution (BOT_RESOLVED_REOPENED)
   };
 
   // Confidence metadata
@@ -66,8 +74,23 @@ interface ReviewResult {
     files_skipped_generated: number;
     files_skipped_vendor: number;
     files_skipped_docs: number;
-    personas_run: string[];        // ["SE", "SC", "IN-light", "TS", "DA"]
-    personas_escalated: string[];  // subset that escalated to subagents
+    // Canonical persona surface — one entry per fixed persona code (SE, SC, IN, DA, FE, TS).
+    // `status` mirrors the "Personas activated" table in the markdown summary body.
+    //   "active" — ran and produced ≥1 finding (any tier, incl. suggestions)
+    //   "pass"   — ran and produced 0 findings
+    //   "skip"   — did not run (conditional trigger missed, or disabled by override)
+    personas: {
+      SE: { status: "active" | "pass" | "skip"; reason: string };
+      SC: { status: "active" | "pass" | "skip"; reason: string };
+      IN: { status: "active" | "pass" | "skip"; reason: string; mode?: "light" | "deep" };
+      DA: { status: "active" | "pass" | "skip"; reason: string };
+      FE: { status: "active" | "pass" | "skip"; reason: string };
+      TS: { status: "active" | "pass" | "skip"; reason: string };
+    };
+    // Back-compat: subset of personas whose status is "active" or "pass" (i.e., personas that ran).
+    // Prefer `personas` for new consumers; `personas_run` is retained so existing tooling keeps working.
+    personas_run: string[];        // e.g. ["SE", "SC", "IN", "TS", "DA"]
+    personas_escalated: string[];  // subset that escalated to subagents (DA/IN-deep/FE)
     degraded_signals: string[];    // e.g., ["lifecycle_quality:degraded"] if GraphQL unavailable
   };
 }
@@ -109,6 +132,7 @@ interface Delegation {
     "is_draft": false
   },
   "decision": "REQUEST_CHANGES",
+  "verdict_label": "CHANGES_REQUESTED",
   "decision_reason": "1 SC1-AUTH-MISSING (api/admin.ts), 1 DA3-BACKFILL-MISSING (migrations/0042)",
   "ci_state": "green",
   "exit_code": 1,
@@ -204,14 +228,24 @@ interface Delegation {
     "capped": false,
     "inline_comments_posted": 4,
     "suggestion_blocks_used": 1,
-    "inline_comments_failed": 0
+    "inline_comments_failed": 0,
+    "threads_resolved": 2,
+    "threads_resolved_reopened": 0
   },
   "confidence": {
     "files_reviewed": 4,
     "files_skipped_generated": 0,
     "files_skipped_vendor": 0,
     "files_skipped_docs": 0,
-    "personas_run": ["SE", "SC", "IN-light", "DA", "TS"],
+    "personas": {
+      "SE": { "status": "active", "reason": "public SDK type changed" },
+      "SC": { "status": "active", "reason": "new admin endpoint added" },
+      "IN": { "status": "active", "reason": "IN-light — no infra files touched", "mode": "light" },
+      "DA": { "status": "active", "reason": "new migration + NOT NULL column" },
+      "FE": { "status": "skip", "reason": "no TSX/JSX in diff" },
+      "TS": { "status": "active", "reason": "production code added with no test files modified" }
+    },
+    "personas_run": ["SE", "SC", "IN", "DA", "TS"],
     "personas_escalated": ["DA"],
     "degraded_signals": []
   }
@@ -227,6 +261,7 @@ When the team's `overrides.md` has `ci_max_decision: COMMENT` set and the skill 
 ```json
 {
   "decision": "REQUEST_CHANGES",
+  "verdict_label": "CHANGES_REQUESTED",
   "exit_code": 1,
   "submission": {
     "submitted": true,
@@ -241,6 +276,8 @@ When the team's `overrides.md` has `ci_max_decision: COMMENT` set and the skill 
 }
 ```
 
+Note: `verdict_label` reflects the *original* (uncapped) verdict, matching `decision` and `exit_code`. A consumer that wants to display the *submitted* action reads `submission.submitted_event`.
+
 CI pipelines that read the exit code will still gate on severity 1; downstream tooling that reads the JSON sees both the cap and the original decision.
 
 ---
@@ -252,10 +289,19 @@ CI pipelines that read the exit code will still gate on severity 1; downstream t
 ```json
 {
   "decision": "COMMENT",
+  "verdict_label": "COMMENT",
   "exit_code": 2,
   "confidence": {
     "files_reviewed": 4,
-    "personas_run": ["SE", "SC", "IN-light", "TS"],
+    "personas": {
+      "SE": { "status": "pass", "reason": "no PR-shaped contract concerns" },
+      "SC": { "status": "pass", "reason": "no auth / injection / secrets surface touched" },
+      "IN": { "status": "pass", "reason": "IN-light — no infra files touched", "mode": "light" },
+      "DA": { "status": "skip", "reason": "no schema/migration touched" },
+      "FE": { "status": "skip", "reason": "no TSX/JSX in diff" },
+      "TS": { "status": "pass", "reason": "code/test ratio within threshold" }
+    },
+    "personas_run": ["SE", "SC", "IN", "TS"],
     "degraded_signals": [
       "lifecycle_quality:degraded",
       "reason:graphql_unavailable",

@@ -38,6 +38,24 @@ wont_fix_markers:
 wont_fix_reactions: [white_check_mark, thumbsup, eyes]
 ```
 
+### Auto-resolve bot-authored threads
+
+When the bot re-runs on a PR and a previously-flagged finding no longer fires (the maintainer pushed a fix), the bot can resolve its own thread automatically. Default `true`. Set to `false` to skip Step 4 of the submission protocol entirely — useful during the first 1-2 weeks of rollout while you build trust in the heuristic, or in repos that prefer maintainers click "Resolve thread" themselves.
+
+```
+auto_resolve_own_threads: true
+```
+
+### Bot identity (for self-thread detection)
+
+Determines which threads count as "bot-authored" for the auto-resolve check. Defaults to `claude[bot]` (the Anthropic Claude Code GitHub App). Override if your team uses a different token / app login.
+
+```
+bot_identity_login: claude[bot]
+```
+
+The bot also matches threads whose first comment body starts with the `**[<persona-id>-<finding-id>]**` marker — that's a content-based fallback for setups where the login varies across auth modes (e.g. local `--auto-approve` from a maintainer's account vs. CI's bot account).
+
 ---
 
 ## Persona configuration

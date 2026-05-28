@@ -10,7 +10,7 @@ These fixtures are regression checks for the skill. Each fixture provides a synt
 
 These are *not* live PRs — they're synthetic inputs designed to exercise specific skill behaviors. The `gh` calls won't actually run; the skill should recognize the structured input and process it as if it had fetched the data.
 
-Minor wording differences in the output are fine. Watch for: missing *1 findings, wrong persona attribution, wrong decision, missing lifecycle suppression, missing "What's Good" section.
+Minor wording differences in the output are fine. Watch for: missing *1 findings, wrong persona attribution, wrong verdict, missing lifecycle suppression, missing "What's solid" section, missing "Personas activated" table (or wrong `active|pass|skip` status / wrong reason text), missing "Findings" table (or wrong severity tier mapping — Must-fix=1-2, Should-fix=3-5, Nits=6-7), the severity-count surface labelled as "Lifecycle counts" (it should be "Findings" to avoid colliding with "Comment lifecycle").
 
 ## Fixtures
 
