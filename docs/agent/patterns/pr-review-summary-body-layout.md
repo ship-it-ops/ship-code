@@ -30,10 +30,10 @@ Shape, in order:
 4. `### Confidence` — prose, 2-4 sentences.
 5. `### Personas activated` — six-row table SE / SC / IN / DA / FE / TS, status ∈ {`✅ active`, `✅ pass`, `⏭ skip`}.
 6. `### Findings` — two-column table Severity | Count, three rows Must-fix (P1-2) / Should-fix (P3-5) / Nits (P6-7). For each tier with `Count > 0`, render a `**<Tier> anchors:**` bullet sub-list below the table. Anchorless findings (no `file:line` target) appear as one-line bullets in their tier's sub-list with a `(no inline anchor)` marker — there is no separate "Findings without inline anchor" section.
-8. `### Delegations` (conditional — omitted when empty).
-9. `### Comment lifecycle` — six-row table Resolved / Won't-fix / Outdated / Possibly addressed / Stale / Open + trailing `Suppressed N findings...` line. ALWAYS rendered.
-10. `### Stale comments needing reply` (conditional — omitted when empty).
-11. `### What's solid` — substantive bullets, always present.
+7. `### Delegations` (conditional — omitted when empty).
+8. `### Comment lifecycle` — six-row table Resolved / Won't-fix / Outdated / Possibly addressed / Stale / Open + trailing `Suppressed N findings...` line. ALWAYS rendered.
+9. `### Stale comments needing reply` (conditional — omitted when empty).
+10. `### What's solid` — substantive bullets, always present.
 
 Always-rendered sections: Verdict line, Confidence, Personas activated, Findings, Comment lifecycle, What's solid. Everything else is conditional on having content.
 
