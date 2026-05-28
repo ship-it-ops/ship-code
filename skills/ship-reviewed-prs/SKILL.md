@@ -77,8 +77,8 @@ APPROVE / REQUEST_CHANGES / COMMENT is computed by table lookup on the merged fi
 ### 6. CI failing blocks APPROVE; pending CI is noted, not blocking.
 Never approve over red CI — the decision degrades to COMMENT with a "CI must pass before approval" note. Pending CI (checks still running) does NOT block APPROVE; instead the review body adds a "Recommend awaiting CI completion before merge" caveat so the human reviewer has the signal without losing the verdict.
 
-### 7. "Possibly addressed" needs human confirmation.
-A later commit touching the same file:line as an open comment is a heuristic, not a fact. Surface the signal, do not assume resolution. APPROVE is degraded to COMMENT until a human confirms.
+### 7. "Possibly addressed" needs human confirmation — except for bot-own threads.
+A later commit touching the same file:line as an open comment is a heuristic, not a fact. **Human-authored threads**: surface the signal, do not assume resolution; APPROVE is degraded to COMMENT until a human confirms. **Bot-authored threads** (the skill posted the original inline comment on a prior run): on the next run, if the same fingerprint no longer fires, the bot posts a one-line `✅ Resolved by ship-reviewed-prs` reply and calls `resolveReviewThread`. Full protocol in `reference.md` §6.5. Override knob `auto_resolve_own_threads` (default `true`).
 
 ### 8. Surface confidence, not opinion.
 The output includes a Confidence section that names what was reviewed, what was *not* reviewed (out of scope, large generated files, unreviewable binaries), and what's residual risk. A confident "REQUEST_CHANGES" is paired with the specific finding that drove the decision.
@@ -186,7 +186,9 @@ Before emitting findings, classify every existing review thread into one of six 
 | RESOLVED | `isResolved: true` on the thread | Suppress; count only |
 | OUTDATED | `isOutdated: true` AND line no longer exists in current diff | Suppress; count only |
 | WONT_FIX | Last author/maintainer comment matches won't-fix marker OR reaction-marker | Suppress; count only |
-| ADDRESSED | Open thread, later commit touched `path` near `original_line ± 5` after the comment | Surface as "Possibly addressed — needs reviewer confirmation"; do not re-derive |
+| ADDRESSED (bot-own) | Bot authored the thread on a prior run AND the fingerprint no longer fires | Auto-resolve (reply + `resolveReviewThread`); count only |
+| ADDRESSED (human) | Human-authored open thread, later commit touched `path` near `original_line ± 5` | Surface as "Possibly addressed — needs reviewer confirmation"; do not re-derive |
+| BOT_RESOLVED_REOPENED | Bot resolved on a prior run; human unresolved it since | Treat as OPEN; do NOT re-resolve. Surface "maintainer disagrees with prior bot resolution" |
 | STALE | Open, last activity > 14 days, no author response | Surface under "Stale comments needing reply" |
 | OPEN | Open, recent activity | Blocking until addressed |
 

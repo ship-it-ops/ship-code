@@ -64,6 +64,8 @@ interface ReviewResult {
     inline_comments_posted: number; // count of inline comments successfully posted to the review
     suggestion_blocks_used: number; // subset of the above that embedded a `suggestion` fence
     inline_comments_failed: number; // count demoted to the summary body after a 404/422 from the comments API
+    threads_resolved: number;       // bot-authored threads auto-resolved this run (Step 4)
+    threads_resolved_reopened: number; // bot-authored threads skipped from auto-resolve because a human un-resolved a prior bot resolution (BOT_RESOLVED_REOPENED)
   };
 
   // Confidence metadata
@@ -226,7 +228,9 @@ interface Delegation {
     "capped": false,
     "inline_comments_posted": 4,
     "suggestion_blocks_used": 1,
-    "inline_comments_failed": 0
+    "inline_comments_failed": 0,
+    "threads_resolved": 2,
+    "threads_resolved_reopened": 0
   },
   "confidence": {
     "files_reviewed": 4,

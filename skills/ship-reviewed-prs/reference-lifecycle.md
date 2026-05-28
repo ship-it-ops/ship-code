@@ -218,6 +218,18 @@ For PRs with ≥ 50 comments OR ≥ 30 commits, suppression becomes load-bearing
 
 If a thread's only commenter is a bot (e.g., Dependabot, CodeQL, `ship-reviewed-prs` from a prior CI run), don't apply maintainer logic to it. A bot can't grant won't-fix.
 
+**Self-authored thread auto-resolution.** Threads whose first commenter is `ship-reviewed-prs` itself (matched via `bot_identity_login` or the `**[<persona-id>-<finding-id>]**` content prefix) get a distinct lifecycle action on subsequent runs: if the original finding's fingerprint no longer fires, the bot resolves its own thread via `resolveReviewThread`. Full action protocol in `reference.md` §6 Step 4. Don't confuse this with WONT_FIX — the bot is not granting itself permission to skip; it is closing a previously-flagged concern that the current diff demonstrates is gone.
+
+### Re-opened bot threads (BOT_RESOLVED_REOPENED)
+
+A bot-authored thread that is currently `isResolved: false` but whose comment timeline contains a `✅ Resolved by ship-reviewed-prs` reply from the bot was resolved on a prior run and un-resolved by a human since. The bot must **not** re-resolve. Classification:
+
+- Treat as OPEN for the duration of this run.
+- Add the diagnostic phrase "maintainer reopened prior bot resolution — re-emitting finding is expected" to the surfaced output when the same fingerprint also fires this run.
+- If the fingerprint no longer fires AND the thread is `BOT_RESOLVED_REOPENED`: leave the thread alone. Do not silently re-resolve. The human's un-resolve is a deliberate signal that something the bot can't see still needs human attention.
+
+Detection requires fetching the thread's comment list (already in the orchestrator's GraphQL query) and scanning for the bot's prior resolution reply token. No new API call beyond the existing fetch.
+
 ### Suggested changes that were committed
 
 GitHub's "commit suggestion" feature creates a commit from a review comment. Detect via commit message `Apply suggestion from <user>`. Mark the source thread as ADDRESSED automatically.
@@ -289,6 +301,17 @@ path_only_threshold: 30
 # When > N comments OR commits, treat as long-lived:
 long_lived_comment_threshold: 50
 long_lived_commit_threshold: 30
+
+# Auto-resolve bot-authored threads when the finding no longer fires.
+# Set to false to disable Step 4 of the submission protocol entirely
+# (useful for first 1-2 weeks of rollout, or repos that prefer manual
+# thread management). Default: true.
+auto_resolve_own_threads: true
+
+# GitHub login that identifies "the bot" for self-authored thread detection.
+# Default matches the Anthropic claude-code GitHub App; teams using a different
+# token (e.g. a generic GH_TOKEN, a renamed app) should override.
+bot_identity_login: claude[bot]
 ```
 
 Format is `key: value` or `key: [list]`. The skill reads `overrides.md` as plain text and pattern-matches these keys; no YAML parser required.

@@ -346,6 +346,51 @@ ask the author/oncall for human judgment on disputed findings.
 
 The prefix line is configurable via `overrides.md` (`ci_bot_identity_prefix`).
 
+### Step 4: Auto-resolve bot-authored threads (when the finding no longer fires)
+
+Runs **after** Step 3 succeeds. Never before — a half-resolved thread set with no surfaced review is confusing. If Step 3 errors, skip Step 4 entirely.
+
+For each unresolved review thread on the PR, compute the predicate:
+
+```
+authored_by_bot AND NOT isResolved AND NOT current_run_re_emitted_fingerprint
+```
+
+- `authored_by_bot` = the thread's *first* comment's `author.login` equals the configured `bot_identity_login` (default `claude[bot]`), OR the first comment's body starts with `**[<persona-id>-<finding-id>]**` (the bot's content marker — useful when login varies across auth modes).
+- `NOT isResolved` is read from the GraphQL `reviewThreads` query already fetched in the orchestrator's Fetch phase.
+- `NOT current_run_re_emitted_fingerprint` = no finding in this run's merged list shares the same `(path, line ± 5, finding-id)` fingerprint as the bot's original comment.
+
+For each thread that passes the predicate:
+
+```bash
+# Reply with a one-line resolution marker (gives humans an audit trail and a re-open target)
+gh api -X POST "repos/<owner>/<repo>/pulls/<n>/comments/<original_comment_id>/replies" \
+  -f body="✅ Resolved by ship-reviewed-prs — finding no longer fires at this anchor (run ${HEAD_SHA:0:7})."
+
+# Resolve via GraphQL
+gh api graphql -F threadId="<thread_node_id>" -f query='
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: { threadId: $threadId }) {
+      thread { id isResolved }
+    }
+  }'
+```
+
+The resolution reply body MUST start with the literal token `✅ Resolved by ship-reviewed-prs` so the skill can detect its own prior resolutions on later runs (see BOT_RESOLVED_REOPENED handling below).
+
+**BOT_RESOLVED_REOPENED detection.** A bot-authored thread that is currently `isResolved: false` BUT whose comment history contains a `✅ Resolved by ship-reviewed-prs` reply from the bot is a thread the bot resolved on a prior run and a human un-resolved since. Do **not** re-resolve. Re-classify as OPEN with the note "maintainer reopened prior bot resolution — re-emitting finding is expected." If the same fingerprint still fires this run, emit the finding normally; the un-resolve is the human's signal that they didn't agree the concern was addressed.
+
+**Permissions.** `pull-requests: write` (already required for posting reviews) is sufficient for both `resolveReviewThread` and the reply comment. No new token scope.
+
+**Counter.** Track resolved count in the orchestrator and add to:
+
+- Summary body: `Resolved N stale bot-authored threads this run.` — one trailing line below the `Suppressed N findings...` line in the Comment lifecycle section. Render only when `N > 0`.
+- JSON output: `submission.threads_resolved: number` and `submission.threads_resolved_reopened: number`.
+
+**Disabling.** Set `auto_resolve_own_threads: false` in `overrides.md` to skip Step 4 entirely. Useful for the first 1-2 weeks of rollout to build trust, or for repos that prefer manual thread management.
+
+**Error handling.** A failed reply-post or `resolveReviewThread` mutation for any single thread logs a warning to stderr and continues with the rest. Step 4 failures never affect exit code — the review's verdict is already on the record from Step 3. A blanket auth failure (401/403) on the GraphQL mutation aborts Step 4 entirely; subsequent runs will retry.
+
 ---
 
 ## 6a. Summary Body Rendering Details
