@@ -180,7 +180,7 @@ Reviewed 4 files: 1 migration, 2 production TypeScript, 1 SDK type. Skipped 0 ge
 - `DA3` migrations/0042_add_user_tier.sql:1 — see inline comment
 
 **Nit anchors:**
-- `SC7` services/billing.ts:6 — see inline comment
+- `SC7` services/billing.ts:6 — `console.log` writes full user object including email; use `logger.info("billing.premium_check", { user_id: userId })` from the structured logger. (no inline anchor — fix requires new import)
 
 ### Delegations
 - Run `/ship-tested-code` on this PR — production code added in `services/billing.ts` and `api/admin.ts` (52 net added lines) with no test files modified. TS1 triggered.
