@@ -1,0 +1,1 @@
+../../../../skills/ship-devops/ci-github-actions.md

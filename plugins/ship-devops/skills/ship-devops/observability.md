@@ -1,0 +1,1 @@
+../../../../skills/ship-devops/observability.md
