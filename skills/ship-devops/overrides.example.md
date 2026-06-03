@@ -177,7 +177,7 @@ dev_custom_rules:
 
 ## CI-mode tuning
 
-When invoked from `ship-reviewed-prs` DV delegation (Phase 2):
+When invoked from `ship-reviewed-prs` IN delegation:
 
 ```
 dev_max_delegation_decision: REQUEST_CHANGES         # default: full matrix

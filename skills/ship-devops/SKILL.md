@@ -7,7 +7,7 @@ description: >
   flow/batch signals) when writing or reviewing pipeline YAML, IaC, Dockerfiles,
   k8s manifests, deploy scripts, and the application code that integrates with
   them. Invoke explicitly for DevOps/CI/CD reviews, or as the delegation target
-  from the future ship-reviewed-prs DV persona. Do not invoke for pure styling,
+  from the ship-reviewed-prs IN (Senior Infra / SRE / DevOps) persona. Do not invoke for pure styling,
   application-only logic, one-off prototypes, or test-design depth (use
   ship-clean-code, ship-secure-code, or ship-tested-code respectively).
 allowed-tools: Read, Grep, Glob
@@ -34,7 +34,7 @@ The detailed reference files (`reference.md`, `reference-categories.md`, the pla
 ## Mode Detection
 
 - **Review mode** (default and currently only mode): Read the target files, analyze against the 12-category rubric below, produce a structured report. Never edit code, never produce patches except as advisory snippets in the report.
-- **Triggered explicitly** by: `/ship-devops <path|file>`, "devops review", "ci review", "deploy review", "infra review", "pipeline review", or invocation from `ship-reviewed-prs` DV delegation (Phase 2 — not wired yet).
+- **Triggered explicitly** by: `/ship-devops <path|file>`, "devops review", "ci review", "deploy review", "infra review", "pipeline review", or invocation from `ship-reviewed-prs` IN-persona delegation.
 
 If asked to *write* deploy-adjacent code (e.g., a new GitHub Actions workflow, a Terraform module, a Dockerfile), the skill does not apply directly — write the code with `ship-clean-code`, then run this skill to review it. The write/review split is intentional; a single mode that does both tends to produce pipelines that look defended (lots of steps, lots of `if` guards) without actually being safe.
 
@@ -116,7 +116,7 @@ The full tier definitions per finding ID are in `reference-categories.md`.
 | Only *.3-*.5 findings | `COMMENT` |
 | Zero findings | `APPROVE` (or `NO_FINDINGS` when run standalone) |
 
-`ship-devops` does not have its own submission semantics — when run standalone, it produces a structured report. When run as the delegation target from `ship-reviewed-prs` (Phase 2), the parent skill maps the report to its own decision matrix (DEVn.1 → DV1-PIPELINE-MISSING-TESTS/DV2-NO-ROLLBACK/etc.).
+`ship-devops` does not have its own submission semantics — when run standalone, it produces a structured report. When run as the delegation target from `ship-reviewed-prs` IN persona, the parent skill maps the report to its own decision matrix (DEVn.1 → IN priority-1, DEVn.2 → IN priority-3, DEVn.3-5 → IN priority-5+) and renders findings with compound tags `[INn / DEVm.t-LABEL]` so the depth-target's category surfaces alongside the orchestrator's priority code.
 
 ## Review Output Format
 
@@ -194,7 +194,7 @@ Track: tier-1 findings per PR (should trend toward zero); false-positive rate pe
 
 ## Related Skills
 
-- **`ship-reviewed-prs`** — PR-level orchestrator. Its future DV persona (Phase 2) will delegate to this skill for depth, exactly as SC delegates to `ship-secure-code` today.
+- **`ship-reviewed-prs`** — PR-level orchestrator. Its IN persona (Senior Infra / SRE / DevOps) delegates depth here, exactly as SC delegates to `ship-secure-code`. The orchestrator emits direct IN1–IN7 findings for high-precision single-line hits and `Run /ship-devops on <file>` delegation bullets for multi-file pipeline review. Compound finding tags `[IN1 / DEV2.1-NO-ROLLBACK]` surface this skill's category alongside the orchestrator's priority code. See `ship-reviewed-prs/reference-personas.md` § IN → Delegation to `ship-devops` for the full direct-emit-vs-delegate rubric.
 - **`ship-secure-code`** — SEC7 owns hardcoded-secret-literal-in-code (the data leak). DEV5 owns sourcing-discipline (vault client, 12-factor, default-on-missing). On the same line both could fire; ship-secure-code wins for the user-facing finding, ship-devops adds a cross-reference. SEC1.4 (over-privileged service account) cross-cuts DEV4 (container `USER`) and DEV3 (IaC IAM); same tier-1 fires only once via the delegation parent. See `reference.md` § Anti-overlap for the full boundary.
 - **`ship-clean-code`** — File-level code quality. DEV reviews operability, not style. A poorly-named Terraform variable is `ship-clean-code`; a Terraform module that mutates state without `terraform plan` is DEV3.
 - **`ship-tested-code`** — Test design. DEV1 reviews whether tests *run in CI*, gate merge, and fail fast — not whether they're well-designed. The two are non-overlapping by intent.

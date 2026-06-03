@@ -149,12 +149,12 @@ Owns: PR shape signals visible in the diff. Size, age, partial-work, atomicity.
 
 Compute from the merged finding list:
 
-| Condition | Decision (standalone run) | When invoked via ship-reviewed-prs DV delegation (Phase 2) |
-|-----------|---------------------------|------------------------------------------------------------|
-| Any tier-1 finding | `REQUEST_CHANGES` | Maps to DV1 / DV2 / DV3 / etc. priority-1 at the parent level |
-| Only tier-2 findings | `COMMENT` | Maps to DV*.3 (priority-3) at parent |
-| Only tier-3-5 findings | `COMMENT` | Maps to DV*.5+ (priority-5+) at parent |
-| Zero findings | `APPROVE` (or `NO_FINDINGS`) | DV persona reports clean |
+| Condition | Decision (standalone run) | When invoked via ship-reviewed-prs IN delegation |
+|-----------|---------------------------|--------------------------------------------------|
+| Any tier-1 finding | `REQUEST_CHANGES` | Maps to IN1 / IN3 / IN5 / IN6 priority-1 at the parent level (per the IN↔DEV mapping in `ship-reviewed-prs/reference-personas.md`) |
+| Only tier-2 findings | `COMMENT` | Maps to IN*.3 (priority-3) at parent |
+| Only tier-3-5 findings | `COMMENT` | Maps to IN*.5+ (priority-5+) at parent |
+| Zero findings | `APPROVE` (or `NO_FINDINGS`) | IN persona reports clean |
 
 The skill never APPROVEs on a tier-1 finding regardless of overrides. `ci_max_decision: COMMENT` is honored for parent-skill submission but the skill's own report still names the finding as Critical.
 
@@ -245,12 +245,14 @@ After an incident, `ship-debugged-code` designs the regression test; `ship-devop
 
 ### vs. `ship-reviewed-prs`
 
-`ship-reviewed-prs` DV persona (Phase 2) is the **detection** orchestrator: it scans the diff with high-precision patterns for DV1-DVn hits, then delegates depth to this skill. Specifically:
+`ship-reviewed-prs` IN persona (Senior Infra / SRE / DevOps) is the **detection** orchestrator: it scans the diff with high-precision patterns for IN1-IN7 hits, then delegates depth to this skill. Specifically:
 
-- Hits the DV orchestrator emits directly (high-confidence single-line patterns): floating action ref, missing `USER` in Dockerfile, missing `resources.limits` in Deployment, secret literal in workflow YAML.
-- Hits the DV orchestrator turns into a delegation bullet: anything requiring multi-file pipeline trace, environment-context awareness, or migration-choreography reasoning.
+- Hits the IN orchestrator emits directly (high-confidence single-line patterns): floating action ref, missing `USER` in Dockerfile, missing `resources.limits` in Deployment, secret literal in workflow YAML, `fetch(url)` without timeout, `Recreate` strategy on traffic-serving Deployment.
+- Hits the IN orchestrator turns into a delegation bullet: anything requiring multi-file pipeline trace (workflow + Dockerfile + manifest + migration in one PR), environment-context awareness (which env does this deploy reach?), migration-choreography reasoning (DEV8 depth), or compound DEV category overlap (e.g., DEV2 + DEV4 + DEV9 all firing across a single new-service PR).
 
-The delegation is one-way: `ship-reviewed-prs` DV → `ship-devops`. Running `ship-devops` does not back-invoke `ship-reviewed-prs`.
+The delegation is one-way: `ship-reviewed-prs` IN → `ship-devops`. Running `ship-devops` does not back-invoke `ship-reviewed-prs`.
+
+Compound tagging: when invoked from delegation, this skill's findings appear in the orchestrator's output as `[INn / DEVm.t-LABEL]` so the parent's priority code and this skill's category are both visible. See `ship-reviewed-prs/reference-personas.md` § IN → IN ↔ DEV ID mapping for the full table.
 
 ---
 
@@ -276,7 +278,7 @@ When invoked on a directory or PR diff, classify files first:
 
 ## 7. Output schema (machine-readable, for delegation)
 
-When invoked from `ship-reviewed-prs` (Phase 2), the skill returns a structured object:
+When invoked from `ship-reviewed-prs` IN persona, the skill returns a structured object:
 
 ```json
 {

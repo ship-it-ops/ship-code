@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Ship better code with AI. Production-quality skills for clean code, testing, debugging, PR review, and more.",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "pluginRoot": "./plugins"
   },
   "plugins": [
@@ -48,8 +48,8 @@
     {
       "name": "ship-reviewed-prs",
       "source": "./plugins/ship-reviewed-prs",
-      "description": "Multi-persona pull-request review (senior engineer, senior security, senior infra/SRE, senior data engineer, senior frontend engineer, test-coverage signal) with comment-lifecycle suppression and decisive APPROVE/REQUEST_CHANGES/COMMENT submission. Runs locally with confirmation gating and in CI fully automated. Composes with the other ship-* skills via delegation.",
-      "version": "1.2.0",
+      "description": "Multi-persona pull-request review (senior engineer, senior security, senior infra/SRE/DevOps, senior data engineer, senior frontend engineer, test-coverage signal) with comment-lifecycle suppression and decisive APPROVE/REQUEST_CHANGES/COMMENT submission. Runs locally with confirmation gating and in CI fully automated. Composes with the other ship-* skills via delegation: SC → ship-secure-code, IN → ship-devops, SE → ship-clean-code, TS → ship-tested-code.",
+      "version": "1.3.0",
       "author": {
         "name": "ship-it-ops"
       },
@@ -72,8 +72,8 @@
     {
       "name": "ship-devops",
       "source": "./plugins/ship-devops",
-      "description": "DevOps and CI/CD review (DEV1-DEV12: CI pipelines, deployment safety, IaC immutability, container images, secrets/config sourcing, observability, release management, schema migrations, health/readiness, SLO/performance, incident hygiene, and flow/batch signals). Sibling to ship-secure-code; designed as the depth target when the future ship-reviewed-prs DV persona delegates.",
-      "version": "0.1.0",
+      "description": "DevOps and CI/CD review (DEV1-DEV12: CI pipelines, deployment safety, IaC immutability, container images, secrets/config sourcing, observability, release management, schema migrations, health/readiness, SLO/performance, incident hygiene, and flow/batch signals). Sibling to ship-secure-code; serves as the depth target when the ship-reviewed-prs IN (Senior Infra / SRE / DevOps) persona delegates.",
+      "version": "0.2.0",
       "author": {
         "name": "ship-it-ops"
       },

@@ -1,5 +1,5 @@
 # Agent Context
-Last updated: 2026-06-02 | Total notes: 14
+Last updated: 2026-06-02 | Total notes: 15
 
 <!--
   This file is the index for `docs/agent/`. Agents read it at session start.
@@ -16,6 +16,7 @@ Last updated: 2026-06-02 | Total notes: 14
 - [pr-review-table-driven-summary-format](decisions/pr-review-table-driven-summary-format.md) | decision | active | core | 2026-05-26 | Summary body adopts tables and LGTM-style verdict labels
 - [pr-review-auto-resolves-own-threads](decisions/pr-review-auto-resolves-own-threads.md) | decision | active | core | 2026-05-28 | Auto-resolve bot-authored threads when finding no longer fires
 - [ship-devops-12-category-catalog](decisions/ship-devops-12-category-catalog.md) | decision | active | core | 2026-06-02 | DEV1-DEV12 rubric for new ship-devops skill
+- [in-persona-delegates-to-ship-devops](decisions/in-persona-delegates-to-ship-devops.md) | decision | active | core | 2026-06-02 | IN persona depth target wired to ship-devops
 
 ## Patterns
 - [plugin-command-discovery](patterns/plugin-command-discovery.md) | pattern | active | core | 2026-05-25 | Plugin slash commands live at commands/<name>.md namespaced

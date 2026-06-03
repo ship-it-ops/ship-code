@@ -88,6 +88,8 @@ PR-review-specific patterns for TS/JS. For file-level idioms (type safety, async
 
 ## IN — Senior Infra/SRE (TS/JS patterns)
 
+> IN owns **detection** at the PR-review level. The patterns below are the high-precision single-line shapes that fire as direct IN findings. For deploy-path trace, multi-file pipeline context (workflow + Dockerfile + manifest + migration in one PR), platform-specific depth (Terraform / k8s / Helm / Kustomize / Argo / Flagger), or any of the DEV1–DEV12 categories in the sibling skill, emit `Run /ship-devops on <file>` under Delegations instead of writing a deep finding here. The detailed per-category rubric lives in `ship-devops/reference-categories.md`.
+
 ### Network call hygiene (IN1)
 
 - `fetch(url)` without `signal: AbortSignal.timeout(N)` — `fetch` has no default timeout in Node 18+. Always pass an `AbortSignal`.
