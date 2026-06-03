@@ -1,0 +1,5 @@
+{
+  "name": "ship-devops",
+  "description": "DevOps and CI/CD review skill (DEV1-DEV12: CI pipelines, deployment safety, IaC immutability, container images, secrets/config sourcing, observability, release management, schema migrations, health/readiness, SLO/performance, incident hygiene, and flow/batch signals). Sibling to ship-secure-code; serves as the depth target when the ship-reviewed-prs IN (Senior Infra / SRE / DevOps) persona delegates.",
+  "version": "0.2.0"
+}

@@ -103,7 +103,7 @@ The skill runs five personas against every PR. The first three (SE, SC, IN-light
 |------|---------|---------|------|
 | SE | Senior Engineer | Always | API contracts, backward compatibility, rollout safety, module-level SRP. Defers naming/length/readability to `ship-clean-code`. |
 | SC | Senior Security Engineer | Always | AuthN/Z, injection, secrets, crypto, supply-chain, PII, log leakage. Overrides `ship-clean-code` P2-SEC on overlap. |
-| IN | Senior Infra / SRE / DevOps | Always (light); deep when infra files touched | Timeouts, retries, idempotency, observability, resource limits, CI/CD, IaC, migration safety (ops dimension). |
+| IN | Senior Infra / SRE / DevOps | Always (light); deep when infra files touched | Timeouts, retries, idempotency, observability, resource limits, CI/CD, IaC, migration safety (ops dimension). Delegates depth to `ship-devops` (DEV1–DEV12). |
 | DA | Senior Data Engineer | Conditional on schema/event/migration files | Schema break risk, data loss, backfill, indexes, type precision, event-contract evolution, retention/PII. |
 | FE | Senior Frontend Engineer | Conditional on tsx/jsx/component files | A11Y contract correctness, controlled-component state desync, command/history completeness, no-op prop values, SSR/global-CSS constraints, range clamping, changeset accuracy. |
 | TS | Test Reviewer | Always (delegation-only) | Surfaces test-coverage gap signals. All test-quality depth defers to `ship-tested-code`. |
@@ -146,6 +146,7 @@ Personas defer to sibling skills rather than duplicating their rubrics. The deci
 | Test design, test coverage depth, flakiness, AAA structure, mocking strategy | `Run /ship-tested-code on <file>` |
 | Root cause of a bug the PR claims to fix (PR description contains "fixes #N") | `Run /ship-debugged-code on PR #N` |
 | Security depth (data-flow trace, framework-specific injection / XSS / SSRF / deserialization / supply chain / crypto / IDOR) beyond a one-line SC pattern match | `Run /ship-secure-code on <file>` |
+| DevOps depth (deploy-path trace, multi-file pipeline review, platform-specific rubric for CI/CD/IaC/containers/k8s/observability/migrations/SLO) beyond a one-line IN pattern match | `Run /ship-devops on <file>` |
 
 A "Delegations" section in the output lists these. They do NOT count toward the decision matrix — they are advisory pointers.
 
@@ -448,6 +449,7 @@ PRs over 100 comments deserve special handling:
 - **`/ship-tested-code`** — Test-quality review (T1-T7 hierarchy, mocking strategy, flakiness). The TS persona always delegates here for depth.
 - **`/ship-debugged-code`** — Bug investigation and root-cause analysis. Useful on bugfix PRs ("fixes #N") to verify the fix is at the right layer.
 - **`/ship-secure-code`** — Application-security depth (SEC1-SEC12: auth, input validation, injection, XSS, CSRF/origin, crypto, secrets, supply chain, PII/logging, resource exhaustion, path traversal, deserialization/SSRF). The SC persona scans the diff with high-precision single-line patterns and delegates anything requiring data-flow trace or framework-specific depth here.
+- **`/ship-devops`** — DevOps and CI/CD depth (DEV1-DEV12: CI pipelines, deployment safety, IaC immutability, container images, secrets/config sourcing, observability, release management, schema migrations, health/readiness, SLO/performance, incident hygiene, flow/batch signals). The IN persona scans the diff with high-precision single-line patterns and delegates anything requiring deploy-path trace, multi-file pipeline context, or platform-specific depth here.
 
 This skill is the **orchestrator** that brings PR context (diff, threads, CI status) to the others. The others provide the file-level rubrics.
 

@@ -86,6 +86,8 @@ PR-review-specific patterns for Java. For file-level Java idioms (records, virtu
 
 ## IN — Senior Infra/SRE (Java patterns)
 
+> IN owns **detection** at the PR-review level. The patterns below are the high-precision single-line shapes that fire as direct IN findings. For deploy-path trace, multi-file pipeline context (workflow + Dockerfile + manifest + migration in one PR), platform-specific depth (Terraform / k8s / Helm / Kustomize / Argo / Flagger), or any of the DEV1–DEV12 categories in the sibling skill, emit `Run /ship-devops on <file>` under Delegations instead of writing a deep finding here. The detailed per-category rubric lives in `ship-devops/reference-categories.md`.
+
 ### Network call hygiene (IN1)
 
 - `RestTemplate` without `setConnectTimeout` and `setReadTimeout` configured. Better: use `RestClient` (Spring 6.1+) or `WebClient`.

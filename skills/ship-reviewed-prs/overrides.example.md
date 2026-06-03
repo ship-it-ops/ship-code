@@ -104,6 +104,32 @@ fe_trigger_paths:
 fe_min_jsx_lines: 50    # skip FE if the JSX-shaped diff is below this line count
 ```
 
+### IN → ship-devops delegation tuning
+
+By default, the IN persona's deep mode delegates to `/ship-devops` for multi-file pipeline trace and platform-specific depth (see `reference-personas.md` § IN → Delegation to `ship-devops`).
+
+Disable the delegation entirely (the IN persona's direct-emit findings still fire, but no `Run /ship-devops on <file>` bullets appear):
+
+```
+in_delegate_to_ship_devops: false
+```
+
+Or disable delegation only for specific DEV categories (the orchestrator's IN direct-emit still fires; the delegation bullet drops the category):
+
+```
+in_disabled_delegation_categories: [DEV12]    # we don't care about flow-batch signals
+```
+
+To remap which DEV categories surface alongside their IN priority code in the rendered finding (compound tag `[IN1 / DEV2.1-NO-ROLLBACK]`):
+
+```
+in_compound_tag_categories: [DEV2, DEV4, DEV8]   # only show DEV tag for the heavy-hitters
+```
+
+Set to `[]` to suppress compound tagging entirely (findings render as `[IN1-PROD-OUTAGE-RISK]` only).
+
+### Disabling FE
+
 To disable FE entirely (e.g., on a non-React monorepo):
 
 ```

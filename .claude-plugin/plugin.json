@@ -11,6 +11,7 @@
     "./skills/ship-tested-code",
     "./skills/ship-debugged-code",
     "./skills/ship-secure-code",
+    "./skills/ship-devops",
     "./skills/ship-reviewed-prs"
   ]
 }

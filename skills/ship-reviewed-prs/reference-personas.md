@@ -164,6 +164,50 @@ IN owns **operational** concerns. Algorithm-level performance (O(n²) where O(n 
 
 On schema files, DA wins over IN — DA owns the schema-correctness dimension while IN owns the migration ops dimension. They can both fire on the same migration (DA on irreversibility, IN on lock-time), but they fingerprint differently and don't collide.
 
+### Delegation to `ship-devops`
+
+IN mirrors SC's two-mode pattern. The orchestrator owns the direct-emit catches that are precise enough to fire from a single-line diff scan; `ship-devops` owns the depth (DEV1–DEV12 rubric, platform-specific patterns, deploy-path trace).
+
+- **Direct-emit** (single-line, high-precision patterns the orchestrator emits as IN1–IN7 inline findings without delegation):
+  - `fetch(url)` / `axios.get(url)` / `requests.get(url)` server-side without a timeout argument (IN1).
+  - New HTTP endpoint / queue worker / cron job with no log line, no metric, no trace span (IN2).
+  - `Promise.all(items.map(...))` on an unbounded list / `asyncio.gather(*[...])` on untrusted input (IN3).
+  - Workflow YAML `uses: actions/checkout@main` / `@v4` / any floating action tag (IN5).
+  - Workflow YAML with a literal secret in `env:` or `with:` (IN5 + SC3 — SC wins on the leak; IN flags the workflow design).
+  - Dockerfile with no `USER` directive on a new image (IN1 + IN5 overlap; surfaced as IN1).
+  - k8s Deployment with no `resources.limits` in a shared cluster (IN3).
+  - `Recreate` strategy on a Deployment with `replicas > 1` (IN1).
+  - Migration that drops a column referenced elsewhere in the same PR (IN1 — operational rollback risk; DA1 fires too for the schema-break framing).
+
+- **Delegate** (anything requiring deploy-path trace, multi-file pipeline context, platform-specific rubric depth, or two of the DEV1–DEV12 categories firing together — emit a single `Run /ship-devops on <file>` bullet under Delegations):
+  - Two-phase migration choreography — does the rollback survive without data loss? (DEV8 depth).
+  - Helm chart / Kustomize overlay safety — probes, PDB, securityContext, HPA wiring. (DEV2 + DEV9 + DEV10 depth).
+  - Terraform plan-gate quality — `moved {}` blocks, state backend, drift signals. (DEV3 depth).
+  - Container image hygiene beyond `USER` — multi-stage, build secrets, digest pinning, healthcheck. (DEV4 depth).
+  - Observability completeness — golden signals, dashboard-as-code, alert quality, runbook linking. (DEV6 + DEV11 depth).
+  - SLO / perf-budget coverage and DORA signals. (DEV10 + DEV11 depth).
+  - Multi-file pipeline review: workflow + Dockerfile + manifests + migration in one PR — every file individually looks fine, but the deploy path is broken.
+
+The delegation bullet does NOT count toward the decision matrix — same rule as other delegations. But IN direct-emit findings still drive the matrix per their tier.
+
+This mirrors the SC → `ship-secure-code` pattern; the orchestrator does shallow detection, the depth target owns the rubric.
+
+### IN ↔ DEV ID mapping
+
+When the IN persona's depth target (`ship-devops`) returns findings, the orchestrator maps them back:
+
+| IN | ship-devops DEV |
+|----|------------------|
+| IN1 PROD-OUTAGE-RISK | DEV2 DEPLOYMENT-SAFETY (rollback / strategy), DEV4 CONTAINER-IMAGE (root user), DEV8 SCHEMA-MIGRATION (non-reversible), DEV10 SLO-PERFORMANCE (no timeout / no limits) |
+| IN2 OBSERVABILITY-GAP | DEV6 OBSERVABILITY (logs / metrics / traces), DEV11 INCIDENT-HYGIENE (alert quality, runbook link) |
+| IN3 RESOURCE-LIMITS | DEV10 SLO-PERFORMANCE (k8s limits, HPA, bounded concurrency), DEV4 CONTAINER-IMAGE (image size, capability scope) |
+| IN4 IDEMPOTENCY | (no direct DEV; idempotency is owned by IN at the orchestrator level) |
+| IN5 CI-PIPELINE | DEV1 CI-PIPELINE (action pinning, test gate, permissions), DEV5 CONFIG-MGMT (secret sourcing), DEV7 RELEASE-MGMT (lockfile drift, signing) |
+| IN6 IAC-DRIFT | DEV3 IAC-IMMUTABILITY (state, plan-gate, `moved {}`, environment parity) |
+| IN7 PERF-HOTPATH | DEV10 SLO-PERFORMANCE (perf regression detection) |
+
+When `ship-devops` is invoked from a delegation, the parent orchestrator maps DEVn.1 (must-fix) → IN priority-1, DEVn.2 → IN priority-3, DEVn.3-5 → IN priority-5+. The DEV tag survives into the rendered finding (e.g., `[IN1-PROD-OUTAGE-RISK / DEV2.1-NO-ROLLBACK]`) so the depth signal is visible without losing the orchestrator's priority code.
+
 ### Finding IDs
 
 | ID | Label | When to fire |
