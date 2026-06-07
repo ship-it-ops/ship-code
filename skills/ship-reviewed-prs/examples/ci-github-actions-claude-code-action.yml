@@ -1,0 +1,94 @@
+# Drop-in GitHub Actions workflow that runs ship-reviewed-prs via
+# `anthropics/claude-code-action@v1`.
+#
+# Use this file if you're invoking the skill through the Claude Code Action
+# (the most common path today). If you're invoking the `claude` CLI directly
+# from a runner script instead, see `ci-github-actions.yml` in this same
+# folder.
+#
+# Two things in this template are mandatory and easy to miss — both are
+# scarred in `docs/agent/scars/` of the ship-code repo:
+#
+#   1. The `prompt:` MUST use the namespaced `/<plugin>:<command>` form.
+#      Bare `/ship-reviewed-prs` resolves to "Unknown command" inside the
+#      headless SDK that the action invokes — the skill never loads and the
+#      job exits with `num_turns: 0`. Always write
+#      `/ship-reviewed-prs:review-pr` (see scar `bare-slash-command-unknown-in-action`).
+#
+#   2. The `prompt:` MUST end with `--non-interactive`. GitHub Actions sets
+#      `CI=true` in the runner shell, but the SDK does not reliably surface
+#      that env var into the model's reasoning context. Without the flag the
+#      skill can fall into local mode, try `AskUserQuestion`, get denied, and
+#      exit cleanly without posting the review — a silent drop of complete
+#      work (see scar `ci-mode-auto-detect-unreliable`). The skill now also
+#      has an AskUserQuestion-denial failsafe that submits anyway, but the
+#      flag is still the authoritative signal — keep it.
+#
+# Permissions (least-privilege):
+#   contents: read         — checkout the diff
+#   pull-requests: write   — post the review
+#   issues: write          — sticky comment + thread updates
+#   id-token: write        — required by `anthropics/claude-code-action@v1`
+
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    name: Claude Code Review
+    # Skip drafts, bot-authored PRs (Dependabot, renovate), and pushes to main.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # ship-reviewed-prs walks commit history for ADDRESSED detection.
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        env:
+          # The skill submits the review via `gh api`. Default workflow token
+          # has the `pull-requests: write` + `issues: write` scope from the
+          # block above, which is everything the skill needs.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Keeps a single comment in the PR conversation instead of one per
+          # CI run — readable when reviews fire repeatedly.
+          use_sticky_comment: true
+
+          # Pull the skill from the ship-it-ops/ship-code marketplace.
+          plugin_marketplaces: 'https://github.com/ship-it-ops/ship-code.git'
+          plugins: 'ship-reviewed-prs@ship-code'
+
+          # MANDATORY shape — see header comment for the two scars this defends.
+          #
+          #   /ship-reviewed-prs:review-pr   ← namespaced form, NOT bare /ship-reviewed-prs
+          #   <PR-number>                    ← positional arg
+          #   --non-interactive              ← force CI mode (do not rely on CI=true)
+          #
+          # Add `--strict` after `--non-interactive` if you want COMMENT
+          # decisions to also fail the job (default: only REQUEST_CHANGES fails).
+          prompt: '/ship-reviewed-prs:review-pr ${{ github.event.pull_request.number }} --non-interactive'
+
+          # Optional but recommended for the first few runs in a new repo:
+          # surfaces tool calls and text in the runner log so you can see
+          # exactly what the skill did. Strip it once the integration is
+          # stable, since the verbose output is otherwise noisy. If you ever
+          # debug a "review didn't post" symptom, the first step is turning
+          # this back on.
+          # show_full_output: true
