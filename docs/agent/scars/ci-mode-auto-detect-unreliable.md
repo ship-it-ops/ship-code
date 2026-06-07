@@ -2,7 +2,7 @@
 type: scar
 status: active
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-06-07
 author: claude-session-2026-05-26
 tags: [pr-review-workflow, github-action, ci-mode, ask-user-question, submission-gate]
 importance: core
@@ -51,8 +51,20 @@ A run of `gh run view <id> --log` for the `Run Claude Code Review` step finishes
 - For **any** invocation of a ship-reviewed-prs (or similar interactive-gate) skill inside `anthropics/claude-code-action`, always pass `--non-interactive`. Do not skip it because "GitHub Actions sets CI=true automatically" — that is the trap.
 - Pair this scar with [hidden-output-blocks-debugging](hidden-output-blocks-debugging.md): without `show_full_output: true`, the `permission_denials` and "interactive question tool appears unavailable" lines would be invisible and the silent failure would look like the bot simply chose not to review.
 
+## Recurrence — 2026-06-07, PR #48 on ship-it-ops/shipit-ai
+
+Same failure mode in a downstream consumer ([run 27085369112](https://github.com/ship-it-ops/shipit-ai/actions/runs/27085369112/job/79938821159?pr=48)). The shipit-ai `ci.yml` workflow invoked the skill with `prompt: '/ship-reviewed-prs ${{ github.event.pull_request.number }}'` — bare slash command, no `--non-interactive` flag. The skill ran 33 turns, computed a clean REQUEST_CHANGES verdict with two inline comments (SC2 session fixation, IN2 missing timeout), called `AskUserQuestion` twice (both denied), and exited with `Should I submit this to GitHub now? (yes to submit, no to abort)` — submitting nothing. Same scar, different repo.
+
+This recurrence is what motivated two follow-up changes in the ship-code repo (see [askuserquestion-denial-failsafe-to-submission](../decisions/askuserquestion-denial-failsafe-to-submission.md)):
+
+1. **Skill failsafe**: `SKILL.md` now treats `AskUserQuestion` denial at the submission gate as a switch to CI mode and submits via `gh api`. Prevents the silent-drop tail case even when the workflow forgets the flag.
+2. **Authoritative template**: `skills/ship-reviewed-prs/examples/ci-github-actions-claude-code-action.yml` ships the canonical `anthropics/claude-code-action@v1` workflow shape with the namespaced slash command and `--non-interactive` baked in. Future consumers copy from this template.
+
+The flag is still mandatory in workflow YAML — the failsafe is a backstop, not a replacement.
+
 ## Related
 
+- [askuserquestion-denial-failsafe-to-submission](../decisions/askuserquestion-denial-failsafe-to-submission.md) — the skill-level failsafe added in response to this recurrence.
 - [pr-review-installs-plugin-from-pr-head](../decisions/pr-review-installs-plugin-from-pr-head.md) — the dogfood-install decision that makes this scar reproducible at all.
 - [hidden-output-blocks-debugging](hidden-output-blocks-debugging.md) — the diagnostic toggle that made this debuggable.
 - [marketplace-local-path-needs-leading-slash](marketplace-local-path-needs-leading-slash.md) — a separate gotcha in the same workflow file.

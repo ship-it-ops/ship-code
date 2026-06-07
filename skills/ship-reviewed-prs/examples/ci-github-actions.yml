@@ -1,6 +1,13 @@
 # Drop-in GitHub Actions workflow that runs ship-reviewed-prs on every PR.
 #
-# Copy to .github/workflows/pr-review.yml in your repo. Adjust the
+# >>> If you're using `anthropics/claude-code-action@v1` (the more common
+# >>> path today), use `ci-github-actions-claude-code-action.yml` in this
+# >>> same folder instead. That template bakes in two mandatory settings
+# >>> (`/ship-reviewed-prs:review-pr` namespaced form + `--non-interactive`)
+# >>> that this CLI-based template does not cover.
+#
+# This file invokes the `claude` CLI directly from a runner script. Copy to
+# .github/workflows/pr-review.yml in your repo. Adjust the
 # `actions/setup-node` and `claude-code` install steps if your runner already
 # has them.
 #

@@ -1,5 +1,5 @@
 {
   "name": "ship-reviewed-prs",
   "description": "Multi-persona pull-request review with lifecycle-aware suppression, decision matrix, and gh CLI submission (local with confirmation, CI fully automated). The IN persona delegates depth to ship-devops, mirroring SC → ship-secure-code.",
-  "version": "1.3.0"
+  "version": "1.3.1"
 }

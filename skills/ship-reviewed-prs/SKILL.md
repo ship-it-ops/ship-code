@@ -45,6 +45,7 @@ The detailed reference files (`reference.md`, `reference-personas.md`, `referenc
 **Execution mode detection:**
 - `CI=true` env var set → CI mode (used by GitHub Actions, GitLab CI, CircleCI, Jenkins, Buildkite, etc.).
 - `--non-interactive` flag passed → CI mode.
+- `AskUserQuestion` denied/unavailable at the submission gate → CI mode (failsafe — environment is headless and cannot answer; submit via `gh api` instead of printing a chat-side `yes/no` and exiting, which silently drops the review). See `docs/agent/scars/ci-mode-auto-detect-unreliable.md`.
 - Otherwise → local mode.
 
 ## Mode Detection
@@ -280,14 +281,14 @@ Proceed? Type "yes" to submit, "edit" to revise the body, "no" to abort.
 - Zero OPEN threads, AND
 - No "Possibly addressed" items.
 
-For all other states the gate fires regardless of `--auto-approve`.
+For all other states the gate fires regardless of `--auto-approve`. The gate must use `AskUserQuestion` (host's interactive-question primitive) — never a chat-side `yes/no` print. If `AskUserQuestion` is denied/unavailable, fall through to the CI Mode failsafe below; do not exit, do not print a fallback prompt.
 
 ## CI Mode
 
-When `CI=true` is set (or `--non-interactive` flag passed):
+When `CI=true` is set, `--non-interactive` is passed, **or** `AskUserQuestion` is denied/unavailable when the skill reaches the submission gate:
 
 1. Require `GH_TOKEN` or `GITHUB_TOKEN` env var. Exit `3` with a clear message if missing.
-2. No interactive prompts. Decision matrix runs to completion and submits.
+2. No interactive prompts. Decision matrix runs to completion and submits. In the AskUserQuestion-denied failsafe case, prepend a one-line note `(submitted via headless failsafe — calling workflow should add --non-interactive to the prompt)` to the runner log (not the PR review body) so the operator can fix the workflow.
 3. Apply `ci_max_decision` override if set (downgrades a stronger decision to the configured ceiling — see Team Overrides).
 4. Exit code reflects the *original* (uncapped) decision:
    - `0` — APPROVE (or no findings)
@@ -307,7 +308,7 @@ the author/oncall for human judgment on disputed findings.
 <the actual review>
 ```
 
-A drop-in GitHub Actions workflow and GitLab CI snippet ship in `examples/ci-github-actions.yml` and `examples/ci-gitlab.yml`.
+Drop-in workflows ship in `examples/`: `ci-github-actions-claude-code-action.yml` (recommended — `anthropics/claude-code-action@v1` shape, bakes in the namespaced `/ship-reviewed-prs:review-pr` command and `--non-interactive` flag), `ci-github-actions.yml` (direct `claude` CLI invocation), and `ci-gitlab.yml`.
 
 ## Review Output Format
 
