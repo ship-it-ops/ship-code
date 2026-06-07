@@ -29,6 +29,16 @@
 #   pull-requests: write   — post the review
 #   issues: write          — sticky comment + thread updates
 #   id-token: write        — required by `anthropics/claude-code-action@v1`
+#
+# Supply-chain note: this template uses floating version tags
+# (`actions/checkout@v6`, `anthropics/claude-code-action@v1`) for readability.
+# For production workflows pin to a specific commit SHA so a compromised tag
+# can't silently swap the action's source under you:
+#
+#   uses: actions/checkout@<40-char-sha>           # v6.x.x
+#   uses: anthropics/claude-code-action@<sha>      # v1.x.x
+#
+# Use Dependabot or Renovate to keep the SHAs current.
 
 name: PR Review
 
