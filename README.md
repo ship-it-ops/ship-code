@@ -1,7 +1,17 @@
 # ship-code
 
-[![Validate Skills](https://github.com/ship-it-ops/ship-code/actions/workflows/validate-skills.yml/badge.svg)](https://github.com/ship-it-ops/ship-code/actions/workflows/validate-skills.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> [!IMPORTANT]
+> **⚠️ This repository is no longer maintained.**
+>
+> All skills and plugins from `ship-code` have been **consolidated into our Booster repo**. This repository is now archived and will not receive further updates, fixes, or new skills.
+>
+> 👉 **Find everything — and all future development — at [github.com/ship-it-ops/booster](https://github.com/ship-it-ops/booster).**
+>
+> Please update your marketplace sources, installs, and bookmarks to point at Booster. See the [Booster README](https://github.com/ship-it-ops/booster#readme) for current installation instructions.
+
+---
 
 > Ship better code with AI. An open-source collection of skills, agents, and workflows for AI-assisted software development.
 
